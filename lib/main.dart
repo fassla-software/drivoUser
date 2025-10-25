@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
+import 'package:ride_sharing_user_app/firebase_options.dart';
 import 'package:ride_sharing_user_app/helper/notification_helper.dart';
 import 'package:ride_sharing_user_app/helper/responsive_helper.dart';
 import 'package:ride_sharing_user_app/helper/di_container.dart' as di;
@@ -25,7 +26,9 @@ Future<void> main() async {
     HttpOverrides.global = MyHttpOverrides();
   }
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   //firebase crashlytics
   // FlutterError.onError = (errorDetails) {

@@ -124,17 +124,17 @@ class _InitialWidgetState extends State<InitialWidget> {
               widget.expandableKey.currentState?.expand(duration: 1000);
             },
           ),
-          const SizedBox(height: Dimensions.paddingSizeDefault),
-          CustomTextField(
-            prefix: false,
-            borderRadius: Dimensions.radiusSmall,
-            hintText: "coupon_code".tr,
-            controller: rideController.noteController,
-            onTap: () async {
-              await Future.delayed(const Duration(milliseconds: 500));
-              widget.expandableKey.currentState?.expand(duration: 1000);
-            },
-          ),
+          // const SizedBox(height: Dimensions.paddingSizeDefault),
+          // CustomTextField(
+          //   prefix: false,
+          //   borderRadius: Dimensions.radiusSmall,
+          //   hintText: "coupon_code".tr,
+          //   controller: rideController.noteController,
+          //   onTap: () async {
+          //     await Future.delayed(const Duration(milliseconds: 500));
+          //     widget.expandableKey.currentState?.expand(duration: 1000);
+          //   },
+          // ),
           const SizedBox(height: Dimensions.paddingSizeDefault),
           rideController.isLoading || rideController.isSubmit
               ? Center(

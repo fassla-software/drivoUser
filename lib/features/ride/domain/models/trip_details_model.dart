@@ -68,7 +68,7 @@ class TripDetails {
   String? returnTime;
   String? parcelCompleteTime;
   ParcelRefund? parcelRefund;
-  Location? location;
+  CarpoolRideLocation? carpoolRideLocation;
 
   TripDetails(
       {this.id,
@@ -126,7 +126,7 @@ class TripDetails {
       this.returnTime,
       this.parcelCompleteTime,
       this.parcelRefund,
-      this.location});
+      this.carpoolRideLocation});
 
   TripDetails.fromJson(Map<String, dynamic> json) {
     print('=== TripDetails.fromJson called ===');
@@ -224,8 +224,9 @@ class TripDetails {
           ? PickupCoordinates.fromJson(json['customer_request_coordinates'])
           : null;
 
-      location =
-          json['location'] != null ? Location.fromJson(json['location']) : null;
+      carpoolRideLocation = json['carpool_ride_location'] != null
+          ? CarpoolRideLocation.fromJson(json['carpool_ride_location'])
+          : null;
 
       paymentMethod = json['payment_method'];
       if (json['coupon_amount'] != null) {
@@ -564,16 +565,24 @@ class Attachments {
   }
 }
 
-class Location {
+class CarpoolRideLocation {
   double? latitude;
   double? longitude;
 
-  Location(
-      {this.latitude = 30.040507715914405,
-      this.longitude = 31.365755001495806});
+  CarpoolRideLocation({
+    this.latitude,
+    this.longitude,
+  });
 
-  Location.fromJson(Map<String, dynamic> json) {
-    latitude = json['latitude'] ?? 30.040507715914405;
-    longitude = json['longitude'] ?? 31.365755001495806;
+  CarpoolRideLocation.fromJson(Map<String, dynamic> json) {
+    latitude = json['latitude']?.toDouble();
+    longitude = json['longitude']?.toDouble();
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'latitude': latitude,
+      'longitude': longitude,
+    };
   }
 }

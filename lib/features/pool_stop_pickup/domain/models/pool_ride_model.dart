@@ -2,6 +2,40 @@ import 'driver_model.dart';
 import 'vehicle_model.dart';
 import 'match_point_model.dart';
 
+class LocationPoint {
+  final double lat;
+  final double lng;
+  final String placeName;
+
+  LocationPoint({
+    required this.lat,
+    required this.lng,
+    required this.placeName,
+  });
+
+  factory LocationPoint.fromJson(Map<String, dynamic> json) {
+    try {
+      return LocationPoint(
+        lat: (json['lat'] ?? 0.0).toDouble(),
+        lng: (json['lng'] ?? 0.0).toDouble(),
+        placeName: json['place_name'] ?? '',
+      );
+    } catch (e) {
+      print('Error parsing LocationPoint: $e');
+      print('JSON data: $json');
+      return LocationPoint(lat: 0.0, lng: 0.0, placeName: '');
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'lat': lat,
+      'lng': lng,
+      'place_name': placeName,
+    };
+  }
+}
+
 class PoolRide {
   final int routeId;
   final Driver driver;
@@ -23,6 +57,10 @@ class PoolRide {
   final int allowedAgeMin;
   final int allowedAgeMax;
   final String? encodedPolyline;
+  final MatchPoint? routeStartPoint;
+  final MatchPoint? routeEndPoint;
+  final LocationPoint? closestPickup;
+  final LocationPoint? closestDropoff;
 
   PoolRide({
     required this.routeId,
@@ -45,6 +83,10 @@ class PoolRide {
     required this.allowedAgeMin,
     required this.allowedAgeMax,
     this.encodedPolyline,
+    this.routeStartPoint,
+    this.routeEndPoint,
+    this.closestPickup,
+    this.closestDropoff,
   });
 
   factory PoolRide.fromJson(Map<String, dynamic> json) {
@@ -71,6 +113,18 @@ class PoolRide {
         allowedAgeMin: json['allowed_age_min'] ?? 0,
         allowedAgeMax: json['allowed_age_max'] ?? 0,
         encodedPolyline: json['encoded_polyline'],
+        routeStartPoint: json['route_start_point'] != null
+            ? MatchPoint.fromJson(json['route_start_point'])
+            : null,
+        routeEndPoint: json['route_end_point'] != null
+            ? MatchPoint.fromJson(json['route_end_point'])
+            : null,
+        closestPickup: json['closest_pickup'] != null
+            ? LocationPoint.fromJson(json['closest_pickup'])
+            : null,
+        closestDropoff: json['closest_dropoff'] != null
+            ? LocationPoint.fromJson(json['closest_dropoff'])
+            : null,
       );
     } catch (e) {
       print('Error parsing PoolRide: $e');
@@ -101,6 +155,10 @@ class PoolRide {
       'allowed_age_min': allowedAgeMin,
       'allowed_age_max': allowedAgeMax,
       'encoded_polyline': encodedPolyline,
+      'route_start_point': routeStartPoint?.toJson(),
+      'route_end_point': routeEndPoint?.toJson(),
+      'closest_pickup': closestPickup?.toJson(),
+      'closest_dropoff': closestDropoff?.toJson(),
     };
   }
 }

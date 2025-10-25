@@ -9,7 +9,7 @@ class AppConstants {
       //'http://192.168.0.114:8000';
       'https://drivoeg.com'; /* 'https://drivemond-admin.codemond.com'; */
   static const double appVersion = 2.1;
-  static const String mapKey = "AIzaSyCeF4BHLDezqD1pH7mlzxEchtX962QU9Os";
+  static const String mapKey = "AIzaSyBEBg6ItImxrxhsGbv7G9KNyvy1gr2MGwo";
 
   /// Flutter SDK 3.24.0
   static const String fontFamily = 'SFProText';

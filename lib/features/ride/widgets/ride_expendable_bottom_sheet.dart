@@ -1,5 +1,9 @@
 import 'dart:convert';
 import 'dart:math';
+import 'dart:async';
+import 'dart:ui';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:ride_sharing_user_app/common_widgets/expandable_bottom_sheet.dar.dart';
@@ -12,6 +16,7 @@ import 'package:ride_sharing_user_app/features/parcel/widgets/finding_rider_widg
 import 'package:ride_sharing_user_app/features/parcel/widgets/tolltip_widget.dart';
 import 'package:ride_sharing_user_app/features/payment/screens/payment_screen.dart';
 import 'package:ride_sharing_user_app/features/ride/widgets/confirmation_trip_dialog.dart';
+import 'package:ride_sharing_user_app/features/ride/screens/trip_details_screen.dart';
 import 'package:ride_sharing_user_app/features/trip/widgets/rider_details.dart';
 import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/features/location/controllers/location_controller.dart';
@@ -41,12 +46,142 @@ class RideExpendableBottomSheet extends StatefulWidget {
       _RideExpendableBottomSheetState();
 }
 
-class _RideExpendableBottomSheetState extends State<RideExpendableBottomSheet> {
+class _RideExpendableBottomSheetState extends State<RideExpendableBottomSheet>
+    with TickerProviderStateMixin {
   bool isFinished = false;
+
+  // Animation controllers for stunning effects
+  late AnimationController _backgroundController;
+  late AnimationController _floatController;
+  late AnimationController _glowController;
+  late AnimationController _slideController;
+  late AnimationController _fadeController;
+
+  // Animations
+  late Animation<double> _backgroundAnimation;
+  late Animation<double> _floatAnimation;
+  late Animation<double> _glowAnimation;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _fadeAnimation;
+
+  // Background carousel
+  final List<String> _backgroundImages = [
+    'assets/image/static_carpool_panner2.JPG',
+    'assets/image/static_carpool_panner3.JPG',
+    'assets/image/static_carpool_panner4.JPG',
+  ];
+  final PageController _backgroundPageController = PageController();
+  int _currentBackgroundIndex = 0;
+  Timer? _backgroundAutoSwitchTimer;
+  bool _floatFlip = false;
 
   @override
   void initState() {
     super.initState();
+
+    // Initialize animation controllers
+    _backgroundController = AnimationController(
+      duration: const Duration(milliseconds: 3000),
+      vsync: this,
+    );
+
+    _floatController = AnimationController(
+      duration: const Duration(milliseconds: 4000),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _glowController = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    // Initialize animations
+    _backgroundAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _backgroundController,
+      curve: Curves.easeInOut,
+    ));
+
+    _floatAnimation = Tween<double>(
+      begin: -0.02,
+      end: 0.02,
+    ).animate(CurvedAnimation(
+      parent: _floatController,
+      curve: Curves.easeInOut,
+    ));
+
+    _glowAnimation = Tween<double>(
+      begin: 0.3,
+      end: 0.7,
+    ).animate(CurvedAnimation(
+      parent: _glowController,
+      curve: Curves.easeInOut,
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _slideController,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeIn,
+    ));
+
+    // Start animations
+    _backgroundController.forward();
+    _slideController.forward();
+    _fadeController.forward();
+
+    // Start background carousel
+    _startBackgroundCarousel();
+  }
+
+  void _startBackgroundCarousel() {
+    _backgroundAutoSwitchTimer =
+        Timer.periodic(const Duration(seconds: 6), (_) {
+      if (!mounted) return;
+      _currentBackgroundIndex =
+          (_currentBackgroundIndex + 1) % _backgroundImages.length;
+      _backgroundPageController.animateToPage(
+        _currentBackgroundIndex,
+        duration: const Duration(milliseconds: 1200),
+        curve: Curves.easeInOut,
+      );
+      setState(() {
+        _floatFlip = !_floatFlip;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _backgroundController.dispose();
+    _floatController.dispose();
+    _glowController.dispose();
+    _slideController.dispose();
+    _fadeController.dispose();
+    _backgroundPageController.dispose();
+    _backgroundAutoSwitchTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -56,253 +191,603 @@ class _RideExpendableBottomSheetState extends State<RideExpendableBottomSheet> {
         return Container(
           width: MediaQuery.of(context).size.width,
           decoration: BoxDecoration(
-            color: Theme.of(context).canvasColor,
+            color: Theme.of(context).primaryColor,
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(Dimensions.paddingSizeDefault),
               topRight: Radius.circular(Dimensions.paddingSizeDefault),
             ),
             boxShadow: [
               BoxShadow(
-                color: Theme.of(context).hintColor,
-                blurRadius: 5,
-                spreadRadius: 1,
-                offset: const Offset(0, 2),
+                color: Theme.of(context).hintColor.withOpacity(0.3),
+                blurRadius: 20,
+                spreadRadius: 2,
+                offset: const Offset(0, -5),
               ),
             ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: Dimensions.paddingSizeDefault,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  height: 7,
-                  width: 70,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).highlightColor,
-                    borderRadius: BorderRadius.circular(
-                      Dimensions.paddingSizeExtraSmall,
+          child: Stack(
+            children: [
+              // Animated background
+              _buildAnimatedBackground(),
+
+              // Main content with glassy effect
+              ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(Dimensions.paddingSizeDefault),
+                  topRight: Radius.circular(Dimensions.paddingSizeDefault),
+                ),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Theme.of(context).canvasColor.withOpacity(0.85),
+                          Theme.of(context).canvasColor.withOpacity(0.95),
+                        ],
+                      ),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(Dimensions.paddingSizeDefault),
+                        topRight:
+                            Radius.circular(Dimensions.paddingSizeDefault),
+                      ),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: Dimensions.paddingSizeDefault,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Animated handle bar
+                          _buildAnimatedHandleBar(),
+
+                          const SizedBox(height: Dimensions.paddingSizeSmall),
+
+                          // Main content
+                          GetBuilder<RideController>(
+                            builder: (rideController) {
+                              return GetBuilder<LocationController>(
+                                builder: (locationController) {
+                                  String firstRoute = '';
+                                  String secondRoute = '';
+                                  List<dynamic> extraRoute = [];
+                                  if (rideController.tripDetails
+                                              ?.intermediateAddresses !=
+                                          null &&
+                                      rideController.tripDetails
+                                              ?.intermediateAddresses !=
+                                          '["",""]') {
+                                    extraRoute = jsonDecode(
+                                      rideController
+                                          .tripDetails!.intermediateAddresses!,
+                                    );
+                                    if (extraRoute.isNotEmpty) {
+                                      firstRoute = extraRoute[0].toString();
+                                    }
+                                    if (extraRoute.isNotEmpty &&
+                                        extraRoute.length > 1) {
+                                      secondRoute = extraRoute[1].toString();
+                                    }
+                                  }
+
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: Dimensions.paddingSizeDefault,
+                                    ),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        (rideController.currentRideState ==
+                                                RideState.initial)
+                                            ? (widget.isCarpool
+                                                ? _buildCarpoolInitialWidget(
+                                                    locationController,
+                                                  )
+                                                : _buildRegularInitialWidget(
+                                                    rideController))
+                                            : (rideController
+                                                        .currentRideState ==
+                                                    RideState.riseFare)
+                                                ? _buildAnimatedWidget(
+                                                    RaiseFareBottomSheet(
+                                                    expandableKey:
+                                                        widget.expandableKey,
+                                                  ))
+                                                : (rideController
+                                                            .currentRideState ==
+                                                        RideState.findingRider)
+                                                    ? _buildAnimatedWidget(
+                                                        FindingRiderWidget(
+                                                        expandableKey: widget
+                                                            .expandableKey,
+                                                        fromPage:
+                                                            FindingRide.ride,
+                                                      ))
+                                                    : (rideController
+                                                                    .currentRideState ==
+                                                                RideState
+                                                                    .acceptingRider ||
+                                                            rideController
+                                                                    .currentRideState ==
+                                                                RideState
+                                                                    .ongoingRide)
+                                                        ? _buildAnimatedWidget(
+                                                            AcceptingAndOngoingBottomSheet(
+                                                            firstRoute:
+                                                                firstRoute,
+                                                            secondRoute:
+                                                                secondRoute,
+                                                            expandableKey: widget
+                                                                .expandableKey,
+                                                          ))
+                                                        : (rideController
+                                                                    .currentRideState ==
+                                                                RideState
+                                                                    .otpSent)
+                                                            ? _buildAnimatedWidget(
+                                                                OtpSentBottomSheet(
+                                                                firstRoute:
+                                                                    firstRoute,
+                                                                secondRoute:
+                                                                    secondRoute,
+                                                                expandableKey:
+                                                                    widget
+                                                                        .expandableKey,
+                                                              ))
+                                                            : (rideController
+                                                                        .currentRideState ==
+                                                                    RideState
+                                                                        .ongoingRide)
+                                                                ? _buildAnimatedWidget(
+                                                                    _buildOngoingRideWidget(
+                                                                        rideController))
+                                                                : const SizedBox(),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    Dimensions.paddingSizeDefault,
-                    Dimensions.paddingSizeSmall,
-                    Dimensions.paddingSizeDefault,
-                    Dimensions.paddingSizeDefault,
-                  ),
-                  child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween),
-                ),
-                GetBuilder<RideController>(
-                  builder: (rideController) {
-                    return GetBuilder<LocationController>(
-                      builder: (locationController) {
-                        String firstRoute = '';
-                        String secondRoute = '';
-                        List<dynamic> extraRoute = [];
-                        if (rideController.tripDetails?.intermediateAddresses !=
-                                null &&
-                            rideController.tripDetails?.intermediateAddresses !=
-                                '["",""]') {
-                          extraRoute = jsonDecode(
-                            rideController.tripDetails!.intermediateAddresses!,
-                          );
-                          if (extraRoute.isNotEmpty) {
-                            firstRoute = extraRoute[0].toString();
-                          }
-                          if (extraRoute.isNotEmpty && extraRoute.length > 1) {
-                            secondRoute = extraRoute[1].toString();
-                          }
-                        }
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: Dimensions.paddingSizeDefault,
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              (rideController.currentRideState ==
-                                      RideState.initial)
-                                  ? (widget.isCarpool
-                                      ? _buildCarpoolInitialWidget(
-                                        locationController,
-                                      )
-                                      : Column(
-                                        children: [
-                                          // Vehicle selection row
-                                          if (rideController
-                                              .fareList
-                                              .isNotEmpty)
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 8,
-                                                  ),
-                                              child: Text(
-                                                'Estimated Fare:  ' +
-                                                    PriceConverter.convertPrice(
-                                                      rideController
-                                                          .estimatedFare,
-                                                    ),
-                                                style: textBold.copyWith(
-                                                  fontSize:
-                                                      Dimensions.fontSizeLarge,
-                                                  color:
-                                                      Theme.of(
-                                                        context,
-                                                      ).primaryColor,
-                                                ),
-                                              ),
-                                            ),
-                                          const SizedBox(height: 10),
-                                          // The rest of the initial widget
-                                          InitialWidget(
-                                            expandableKey: widget.expandableKey,
-                                          ),
-                                        ],
-                                      ))
-                                  : (rideController.currentRideState ==
-                                      RideState.riseFare)
-                                  ? RaiseFareBottomSheet(
-                                    expandableKey: widget.expandableKey,
-                                  )
-                                  : (rideController.currentRideState ==
-                                      RideState.findingRider)
-                                  ? FindingRiderWidget(
-                                    expandableKey: widget.expandableKey,
-                                    fromPage: FindingRide.ride,
-                                  )
-                                  : (rideController.currentRideState ==
-                                          RideState.acceptingRider ||
-                                      rideController.currentRideState ==
-                                          RideState.ongoingRide)
-                                  ? AcceptingAndOngoingBottomSheet(
-                                    firstRoute: firstRoute,
-                                    secondRoute: secondRoute,
-                                    expandableKey: widget.expandableKey,
-                                  )
-                                  : (rideController.currentRideState ==
-                                      RideState.otpSent)
-                                  ? OtpSentBottomSheet(
-                                    firstRoute: firstRoute,
-                                    secondRoute: secondRoute,
-                                    expandableKey: widget.expandableKey,
-                                  )
-                                  : (rideController.currentRideState ==
-                                      RideState.ongoingRide)
-                                  ? GestureDetector(
-                                    onTap: () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (_) {
-                                          return ConfirmationDialogWidget(
-                                            icon: Images.endTrip,
-                                            description:
-                                                'end_this_trip_at_your_destination'
-                                                    .tr,
-                                            onYesPressed: () async {
-                                              Get.back();
-                                              Get.dialog(
-                                                const ConfirmationTripDialog(
-                                                  isStartedTrip: false,
-                                                ),
-                                                barrierDismissible: false,
-                                              );
-                                              await Future.delayed(
-                                                const Duration(seconds: 5),
-                                              );
-                                              Get.find<RideController>()
-                                                  .stopLocationRecord();
-                                              rideController
-                                                  .updateRideCurrentState(
-                                                    RideState.completeRide,
-                                                  );
-                                              Get.find<MapController>()
-                                                  .notifyMapController();
-                                              Get.off(
-                                                () => const PaymentScreen(),
-                                              );
-                                            },
-                                          );
-                                        },
-                                      );
-                                    },
-                                    child: Column(
-                                      children: [
-                                        TollTipWidget(
-                                          title: 'trip_is_ongoing'.tr,
-                                        ),
-                                        const SizedBox(
-                                          height: Dimensions.paddingSizeDefault,
-                                        ),
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical:
-                                                Dimensions.paddingSizeDefault,
-                                          ),
-                                          child: Text.rich(
-                                            TextSpan(
-                                              style: textRegular.copyWith(
-                                                fontSize:
-                                                    Dimensions.fontSizeLarge,
-                                                color: Theme.of(context)
-                                                    .textTheme
-                                                    .bodyMedium!
-                                                    .color!
-                                                    .withOpacity(0.8),
-                                              ),
-                                              children: [
-                                                TextSpan(
-                                                  text:
-                                                      "the_car_just_arrived_at"
-                                                          .tr,
-                                                  style: textRegular.copyWith(
-                                                    fontSize:
-                                                        Dimensions
-                                                            .fontSizeDefault,
-                                                  ),
-                                                ),
-                                                TextSpan(text: " ".tr),
-                                                TextSpan(
-                                                  text: "your_destination".tr,
-                                                  style: textMedium.copyWith(
-                                                    fontSize:
-                                                        Dimensions
-                                                            .fontSizeDefault,
-                                                    color:
-                                                        Theme.of(
-                                                          context,
-                                                        ).primaryColor,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                        const ActivityScreenRiderDetails(),
-                                        const SizedBox(
-                                          height: Dimensions.paddingSizeDefault,
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                  : const SizedBox(),
-                            ],
-                          ),
-                        );
-                      },
-                    );
-                  },
+  Widget _buildAnimatedBackground() {
+    return Positioned.fill(
+      child: Stack(
+        children: [
+          // Sliding image carousel
+          PageView.builder(
+            controller: _backgroundPageController,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _backgroundImages.length,
+            itemBuilder: (context, index) {
+              return AnimatedScale(
+                scale: _currentBackgroundIndex == index ? 1.05 : 1.0,
+                duration: const Duration(milliseconds: 1200),
+                curve: Curves.easeInOut,
+                child: Image.asset(
+                  _backgroundImages[index],
+                  fit: BoxFit.cover,
+                ),
+              );
+            },
+          ),
+          // Gradient overlay
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withOpacity(0.3),
+                  Colors.black.withOpacity(0.6),
+                ],
+              ),
+            ),
+          ),
+          // Floating glow orbs
+          _buildFloatingGlowOrbs(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFloatingGlowOrbs() {
+    return IgnorePointer(
+      child: Stack(
+        children: [
+          _buildGlowOrb(
+            alignmentA: Alignment(-0.8, _floatFlip ? -0.7 : -0.5),
+            alignmentB: Alignment(-0.6, _floatFlip ? -0.5 : -0.7),
+            color: Colors.blueAccent.withOpacity(0.15),
+            size: 120,
+          ),
+          _buildGlowOrb(
+            alignmentA: Alignment(_floatFlip ? 0.6 : 0.5, -0.3),
+            alignmentB: Alignment(_floatFlip ? 0.5 : 0.6, -0.1),
+            color: Colors.cyanAccent.withOpacity(0.12),
+            size: 150,
+          ),
+          _buildGlowOrb(
+            alignmentA: Alignment(-0.3, _floatFlip ? 0.6 : 0.5),
+            alignmentB: Alignment(0.0, _floatFlip ? 0.5 : 0.6),
+            color: Colors.deepPurpleAccent.withOpacity(0.10),
+            size: 180,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlowOrb({
+    required Alignment alignmentA,
+    required Alignment alignmentB,
+    required Color color,
+    required double size,
+  }) {
+    return AnimatedAlign(
+      duration: const Duration(seconds: 6),
+      curve: Curves.easeInOut,
+      alignment: _floatFlip ? alignmentA : alignmentB,
+      child: AnimatedBuilder(
+        animation: _glowAnimation,
+        builder: (context, child) {
+          return Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color.withOpacity(_glowAnimation.value),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withOpacity(_glowAnimation.value * 0.5),
+                  blurRadius: size / 2,
+                  spreadRadius: size / 8,
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildAnimatedHandleBar() {
+    return AnimatedBuilder(
+      animation: _floatAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, _floatAnimation.value * 10),
+          child: Container(
+            height: 7,
+            width: 70,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Theme.of(context).highlightColor.withOpacity(0.8),
+                  Theme.of(context).highlightColor,
+                  Theme.of(context).highlightColor.withOpacity(0.8),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(
+                Dimensions.paddingSizeExtraSmall,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Theme.of(context).highlightColor.withOpacity(0.3),
+                  blurRadius: 8,
+                  spreadRadius: 1,
                 ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildAnimatedWidget(Widget child) {
+    return SlideTransition(
+      position: _slideAnimation,
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: child,
+      ),
+    );
+  }
+
+  Widget _buildRegularInitialWidget(RideController rideController) {
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 800),
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, animationValue, child) {
+        return Transform.translate(
+          offset: Offset(0, 30 * (1 - animationValue)),
+          child: Opacity(
+            opacity: animationValue,
+            child: Column(
+              children: [
+                // Vehicle selection row with enhanced design
+                if (rideController.fareList.isNotEmpty)
+                  _buildStunningFareCard(rideController),
+                const SizedBox(height: 16),
+                // The rest of the initial widget
+                InitialWidget(
+                  expandableKey: widget.expandableKey,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStunningFareCard(RideController rideController) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withOpacity(0.9),
+            Colors.white.withOpacity(0.7),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.3),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            spreadRadius: 0,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.white.withOpacity(0.8),
+            blurRadius: 1,
+            spreadRadius: 0,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Theme.of(context).primaryColor.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: Icon(
+              Icons.attach_money,
+              color: Theme.of(context).primaryColor,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Estimated Fare',
+                  style: textMedium.copyWith(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  PriceConverter.convertPrice(rideController.estimatedFare),
+                  style: textBold.copyWith(
+                    fontSize: 20,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Theme.of(context).primaryColor,
+                  Theme.of(context).primaryColor.withOpacity(0.8),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Theme.of(context).primaryColor.withOpacity(0.3),
+                  blurRadius: 8,
+                  spreadRadius: 0,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              'Best Price',
+              style: textMedium.copyWith(
+                fontSize: 10,
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOngoingRideWidget(RideController rideController) {
+    return GestureDetector(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (_) {
+            return ConfirmationDialogWidget(
+              icon: Images.endTrip,
+              description: 'end_this_trip_at_your_destination'.tr,
+              onYesPressed: () async {
+                Get.back();
+                Get.dialog(
+                  const ConfirmationTripDialog(
+                    isStartedTrip: false,
+                  ),
+                  barrierDismissible: false,
+                );
+                await Future.delayed(const Duration(seconds: 5));
+                Get.find<RideController>().stopLocationRecord();
+                rideController.updateRideCurrentState(
+                  RideState.completeRide,
+                );
+                Get.find<MapController>().notifyMapController();
+                Get.off(() => const PaymentScreen());
+              },
+            );
+          },
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.green.withOpacity(0.1),
+              Colors.green.withOpacity(0.05),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.green.withOpacity(0.2),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.green.withOpacity(0.1),
+              blurRadius: 15,
+              spreadRadius: 0,
+              offset: const Offset(0, 5),
+            ),
+            BoxShadow(
+              color: Colors.white.withOpacity(0.8),
+              blurRadius: 1,
+              spreadRadius: 0,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.green.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.directions_car,
+                    color: Colors.green,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Trip is Ongoing',
+                        style: textBold.copyWith(
+                          fontSize: 16,
+                          color: Colors.green,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Your driver is on the way',
+                        style: textMedium.copyWith(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text.rich(
+                TextSpan(
+                  style: textRegular.copyWith(
+                    fontSize: 14,
+                    color: Theme.of(context)
+                        .textTheme
+                        .bodyMedium!
+                        .color!
+                        .withOpacity(0.8),
+                  ),
+                  children: [
+                    TextSpan(
+                      text: "the_car_just_arrived_at".tr,
+                      style: textRegular.copyWith(
+                        fontSize: 13,
+                      ),
+                    ),
+                    TextSpan(text: " ".tr),
+                    TextSpan(
+                      text: "your_destination".tr,
+                      style: textMedium.copyWith(
+                        fontSize: 13,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const ActivityScreenRiderDetails(),
+          ],
+        ),
+      ),
     );
   }
 
@@ -317,88 +802,790 @@ class _RideExpendableBottomSheetState extends State<RideExpendableBottomSheet> {
           });
         }
 
-        return Container(
-          padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header
-              Row(
+        return TweenAnimationBuilder<double>(
+          duration: const Duration(milliseconds: 1000),
+          tween: Tween(begin: 0.0, end: 1.0),
+          builder: (context, animationValue, child) {
+            return Transform.translate(
+              offset: Offset(0, 40 * (1 - animationValue)),
+              child: Opacity(
+                opacity: animationValue,
+                child: Container(
+                  padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Animated Header
+                      _buildAnimatedHeader(),
+                      const SizedBox(height: Dimensions.paddingSizeDefault),
+
+                      // Animated Location Summary
+                      _buildAnimatedLocationSummary(locationController),
+                      const SizedBox(height: Dimensions.paddingSizeDefault),
+
+                      // Animated Search Parameters
+                      _buildAnimatedSearchParameters(rideController),
+                      const SizedBox(height: Dimensions.paddingSizeDefault),
+
+                      // Animated Available Trips
+                      if (rideController.availableTrips.isNotEmpty) ...[
+                        rideController.isLoading
+                            ? _buildLoadingIndicator()
+                            : _buildAnimatedAvailableTrips(rideController),
+                        const SizedBox(height: Dimensions.paddingSizeDefault),
+                      ],
+
+                      // Animated Search Button
+                      _buildAnimatedSearchButton(rideController),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildAnimatedHeader() {
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 800),
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, animationValue, child) {
+        return Transform.scale(
+          scale: 0.8 + (0.2 * animationValue),
+          child: Opacity(
+            opacity: animationValue,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withOpacity(0.9),
+                    Colors.white.withOpacity(0.7),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 15,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 5),
+                  ),
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.8),
+                    blurRadius: 1,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: Theme.of(context).primaryColor.withOpacity(0.1),
                       shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Theme.of(context).primaryColor.withOpacity(0.2),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color:
+                              Theme.of(context).primaryColor.withOpacity(0.2),
+                          blurRadius: 8,
+                          spreadRadius: 0,
+                        ),
+                      ],
                     ),
                     child: Icon(
                       Icons.groups,
-                      size: 20,
+                      size: 18,
                       color: Theme.of(context).primaryColor,
                     ),
                   ),
-                  const SizedBox(width: Dimensions.paddingSizeSmall),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      'Carpool Ride Setup',
-                      style: textBold.copyWith(
-                        fontSize: Dimensions.fontSizeDefault,
-                        color: Theme.of(context).primaryColor,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Carpool Ride Setup',
+                          style: textBold.copyWith(
+                            fontSize: 16,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Find and join rides with other travelers',
+                          style: textMedium.copyWith(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: Dimensions.paddingSizeDefault),
+            ),
+          ),
+        );
+      },
+    );
+  }
 
-              // Location Summary
-              _buildLocationSummary(locationController),
-              const SizedBox(height: Dimensions.paddingSizeDefault),
-
-              // Search Parameters
-              _buildSearchParameters(rideController),
-              const SizedBox(height: Dimensions.paddingSizeDefault),
-
-              // Available Trips
-              if (rideController.availableTrips.isNotEmpty) ...[
-                rideController.isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _buildAvailableTrips(rideController),
-                const SizedBox(height: Dimensions.paddingSizeDefault),
-              ],
-
-              // Search Button
-              Container(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed:
-                      rideController.isSearchingTrips
-                          ? null
-                          : () => _searchForCarpoolRides(rideController),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: Dimensions.paddingSizeSmall,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        Dimensions.radiusDefault,
-                      ),
-                    ),
-                    elevation: 4,
-                    shadowColor: Theme.of(
-                      context,
-                    ).primaryColor.withOpacity(0.3),
+  Widget _buildAnimatedLocationSummary(LocationController locationController) {
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 800),
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, animationValue, child) {
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - animationValue)),
+          child: Opacity(
+            opacity: animationValue,
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withOpacity(0.9),
+                    Colors.white.withOpacity(0.7),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    spreadRadius: 0,
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
                   ),
-                  child:
-                      rideController.isSearchingTrips
-                          ? Row(
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.8),
+                    blurRadius: 1,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                children: [
+                  // Header
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color:
+                              Theme.of(context).primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color:
+                                Theme.of(context).primaryColor.withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.route,
+                          size: 12,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Your Route',
+                        style: textBold.copyWith(
+                          fontSize: 12,
+                          color: Colors.grey[700],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Pickup location
+                  _buildLocationRow(
+                    Icons.my_location,
+                    'Pickup',
+                    locationController.fromAddress?.address ??
+                        'Loading pickup location...',
+                    Colors.green,
+                  ),
+                  const SizedBox(height: 6),
+
+                  // Destination location
+                  _buildLocationRow(
+                    Icons.location_on,
+                    'Destination',
+                    locationController.toAddress?.address ??
+                        'Loading destination...',
+                    Colors.red,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLocationRow(
+      IconData icon, String label, String address, Color color) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: color.withOpacity(0.2),
+              width: 1,
+            ),
+          ),
+          child: Icon(
+            icon,
+            size: 10,
+            color: color,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: textMedium.copyWith(
+                  fontSize: 10,
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                address,
+                style: textRegular.copyWith(
+                  fontSize: 11,
+                  color: Colors.black87,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAnimatedSearchParameters(RideController rideController) {
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 800),
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, animationValue, child) {
+        return Transform.translate(
+          offset: Offset(0, 30 * (1 - animationValue)),
+          child: Opacity(
+            opacity: animationValue,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withOpacity(0.9),
+                    Colors.white.withOpacity(0.7),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    spreadRadius: 0,
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.8),
+                    blurRadius: 1,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                children: [
+                  // Date Selection
+                  _buildAnimatedParameterField(
+                    context: context,
+                    icon: Icons.calendar_today,
+                    label: 'date'.tr,
+                    value: rideController.selectedDate.isEmpty
+                        ? 'tap_to_select_date'.tr
+                        : rideController.selectedDate,
+                    onTap: () => _selectDate(rideController, context),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Gender and Seats Row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildAnimatedDropdownField(
+                          context: context,
+                          icon: Icons.person,
+                          label: 'gender'.tr,
+                          value: rideController.selectedGender,
+                          items: ['both', 'male', 'female'],
+                          onChanged: (value) {
+                            rideController.setCarpoolSearchParameters(
+                                gender: value);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildAnimatedDropdownField(
+                          context: context,
+                          icon: Icons.people,
+                          label: 'seats'.tr,
+                          value: rideController.selectedSeats.toString(),
+                          items: ['1', '2', '3'],
+                          onChanged: (value) {
+                            rideController.setCarpoolSearchParameters(
+                              seats: int.parse(value!),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Ride Type
+                  _buildAnimatedDropdownField(
+                    context: context,
+                    icon: Icons.work,
+                    label: 'ride_type'.tr,
+                    value: rideController.selectedRideType,
+                    items: [
+                      'work',
+                      'college',
+                      'transportation',
+                      'governorates traveling',
+                    ],
+                    onChanged: (value) {
+                      rideController.setCarpoolSearchParameters(
+                          rideType: value);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAnimatedParameterField({
+    required IconData icon,
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+    required BuildContext context,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: Colors.grey[300]!,
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 5,
+              spreadRadius: 0,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: Theme.of(context).primaryColor.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Icon(
+                icon,
+                size: 12,
+                color: Theme.of(context).primaryColor,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: textMedium.copyWith(
+                      fontSize: 10,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    value,
+                    style: textRegular.copyWith(
+                      fontSize: 12,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              size: 14,
+              color: Colors.grey[400],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnimatedDropdownField({
+    required IconData icon,
+    required String label,
+    required String value,
+    required List<String> items,
+    required Function(String?) onChanged,
+    required BuildContext context,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.grey[300]!,
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 5,
+            spreadRadius: 0,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: Theme.of(context).primaryColor.withOpacity(0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Icon(
+                  icon,
+                  size: 10,
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: textMedium.copyWith(
+                  fontSize: 10,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: Colors.grey[300]!,
+                width: 1,
+              ),
+            ),
+            child: DropdownButton<String>(
+              value: value,
+              isExpanded: true,
+              underline: const SizedBox(),
+              dropdownColor: Colors.white,
+              icon: Icon(
+                Icons.keyboard_arrow_down,
+                size: 14,
+                color: Colors.grey[600],
+              ),
+              style: textRegular.copyWith(
+                fontSize: 12,
+                color: Colors.black87,
+                fontWeight: FontWeight.w600,
+              ),
+              items: items.map((String item) {
+                return DropdownMenuItem<String>(
+                  value: item,
+                  child: Text(
+                    item.capitalizeFirst!,
+                    style: textRegular.copyWith(
+                      fontSize: 12,
+                      color: Colors.black87,
+                    ),
+                  ),
+                );
+              }).toList(),
+              onChanged: onChanged,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingIndicator() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.blue.withOpacity(0.1),
+            Colors.blue.withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.blue.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            spreadRadius: 0,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                Theme.of(context).primaryColor,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            'Searching for rides...',
+            style: textMedium.copyWith(
+              fontSize: 14,
+              color: Theme.of(context).primaryColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnimatedAvailableTrips(RideController rideController) {
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 800),
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, animationValue, child) {
+        return Transform.translate(
+          offset: Offset(0, 40 * (1 - animationValue)),
+          child: Opacity(
+            opacity: animationValue,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.grey[50]!,
+                    Colors.white,
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[300]!),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color:
+                              Theme.of(context).primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color:
+                                Theme.of(context).primaryColor.withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.search,
+                          size: 12,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Available Rides (${rideController.availableTrips.length})',
+                        style: textBold.copyWith(
+                          fontSize: 14,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ...rideController.availableTrips
+                      .asMap()
+                      .entries
+                      .map((entry) => _buildAnimatedTripCard(
+                            entry.value,
+                            rideController,
+                            entry.key,
+                          ))
+                      .toList(),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAnimatedSearchButton(RideController rideController) {
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 1000),
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, animationValue, child) {
+        return Transform.translate(
+          offset: Offset(0, 30 * (1 - animationValue)),
+          child: Opacity(
+            opacity: animationValue,
+            child: Container(
+              width: double.infinity,
+              height: 48,
+              margin: const EdgeInsets.only(top: 12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Theme.of(context).primaryColor,
+                    Theme.of(context).primaryColor.withOpacity(0.8),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).primaryColor.withOpacity(0.3),
+                    spreadRadius: 0,
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  ),
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.8),
+                    blurRadius: 1,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: rideController.isSearchingTrips
+                      ? null
+                      : () => _searchForCarpoolRides(rideController),
+                  child: Center(
+                    child: rideController.isSearchingTrips
+                        ? Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               SizedBox(
-                                width: 20,
-                                height: 20,
+                                width: 16,
+                                height: 16,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation<Color>(
@@ -408,968 +1595,528 @@ class _RideExpendableBottomSheetState extends State<RideExpendableBottomSheet> {
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'Searching for rides...',
-                                style: textMedium.copyWith(
-                                  fontSize: Dimensions.fontSizeSmall,
+                                'Searching...',
+                                style: textBold.copyWith(
+                                  fontSize: 14,
                                   color: Colors.white,
                                 ),
                               ),
                             ],
                           )
-                          : Row(
+                        : Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.search, color: Colors.white, size: 20),
+                              Icon(
+                                Icons.search,
+                                size: 20,
+                                color: Colors.white,
+                              ),
                               const SizedBox(width: 8),
                               Text(
-                                'Search for Carpool Rides',
+                                'Search Rides',
                                 style: textBold.copyWith(
-                                  fontSize: Dimensions.fontSizeSmall,
+                                  fontSize: 16,
                                   color: Colors.white,
                                 ),
                               ),
                             ],
                           ),
+                  ),
                 ),
               ),
-            ],
+            ),
           ),
         );
       },
     );
   }
 
-  Widget _buildLocationSummary(LocationController locationController) {
+  Widget _buildAnimatedTripCard(
+      dynamic trip, RideController rideController, int index) {
+    return TweenAnimationBuilder<double>(
+      duration: Duration(milliseconds: 800 + (index * 200)),
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 40 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withOpacity(0.9),
+                    Colors.white.withOpacity(0.7),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    spreadRadius: 0,
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    spreadRadius: 0,
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.8),
+                    blurRadius: 1,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: _StunningTripCard(
+                trip: trip,
+                rideController: rideController,
+                onTap: () =>
+                    _navigateToTripDetails(trip, rideController, context),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _StunningTripCard extends StatefulWidget {
+  final dynamic trip;
+  final RideController rideController;
+  final VoidCallback onTap;
+
+  const _StunningTripCard({
+    required this.trip,
+    required this.rideController,
+    required this.onTap,
+  });
+
+  @override
+  State<_StunningTripCard> createState() => _StunningTripCardState();
+}
+
+class _StunningTripCardState extends State<_StunningTripCard>
+    with TickerProviderStateMixin {
+  // Animation Controllers
+  late AnimationController _cardAnimationController;
+  late AnimationController _slideController;
+  late AnimationController _fadeController;
+
+  // Animations
+  late Animation<double> _cardSlideAnimation;
+  late Animation<double> _cardFadeAnimation;
+  late Animation<double> _slideAnimation;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Initialize animation controllers
+    _cardAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    // Initialize animations
+    _cardSlideAnimation = Tween<double>(
+      begin: 50.0,
+      end: 0.0,
+    ).animate(CurvedAnimation(
+      parent: _cardAnimationController,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _cardFadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _cardAnimationController,
+      curve: Curves.easeInOut,
+    ));
+
+    _slideAnimation = Tween<double>(
+      begin: 30.0,
+      end: 0.0,
+    ).animate(CurvedAnimation(
+      parent: _slideController,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeInOut,
+    ));
+
+    // Start initial animations
+    _cardAnimationController.forward();
+    Future.delayed(const Duration(milliseconds: 200), () {
+      _slideController.forward();
+    });
+    Future.delayed(const Duration(milliseconds: 400), () {
+      _fadeController.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _cardAnimationController.dispose();
+    _slideController.dispose();
+    _fadeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _cardAnimationController,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, _cardSlideAnimation.value),
+          child: Opacity(
+            opacity: _cardFadeAnimation.value,
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    spreadRadius: 0,
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+                border: Border.all(
+                  color: Colors.grey[200]!,
+                  width: 1,
+                ),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: widget.onTap,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        // Header Section with Driver Info
+                        _buildHeaderSection(),
+
+                        const SizedBox(height: 12),
+
+                        // Closest Points Preview
+                        _buildClosestPointsPreview(),
+
+                        const SizedBox(height: 12),
+
+                        // Tap to view details hint
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color:
+                                Theme.of(context).primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.touch_app,
+                                size: 16,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Tap to view details',
+                                style: textMedium.copyWith(
+                                  fontSize: 12,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHeaderSection() {
+    return AnimatedBuilder(
+      animation: _slideController,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, _slideAnimation.value),
+          child: Opacity(
+            opacity: _fadeAnimation.value,
+            child: Row(
+              children: [
+                // Driver Avatar
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    border: Border.all(
+                      color: Theme.of(context).primaryColor.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: widget.trip.driver.profileImage != null &&
+                          widget.trip.driver.profileImage!.isNotEmpty
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(24),
+                          child: Image.network(
+                            widget.trip.driver.profileImage!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(
+                                Icons.person,
+                                size: 24,
+                                color: Theme.of(context).primaryColor,
+                              );
+                            },
+                          ),
+                        )
+                      : Icon(
+                          Icons.person,
+                          size: 24,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                ),
+
+                const SizedBox(width: 12),
+
+                // Driver Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.trip.driver.fullName.isNotEmpty
+                            ? widget.trip.driver.fullName
+                            : 'Unknown Driver',
+                        style: textBold.copyWith(
+                          fontSize: 16,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(Icons.star, size: 14, color: Colors.amber),
+                          const SizedBox(width: 4),
+                          Text(
+                            '4.8 • ${widget.trip.driver.gender.isNotEmpty ? '${widget.trip.driver.gender[0].toUpperCase()}${widget.trip.driver.gender.substring(1)}' : 'Unknown'}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Price Badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '\$${widget.trip.price.toString()}',
+                    style: textBold.copyWith(
+                      fontSize: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildClosestPointsPreview() {
     return Container(
-      padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.grey[200]!,
+          width: 1,
+        ),
       ),
       child: Column(
         children: [
-          // Header
           Row(
             children: [
-              Icon(
-                Icons.route,
-                size: 16,
-                color: Theme.of(context).primaryColor,
-              ),
-              const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-              Text(
-                'Route Summary',
-                style: textMedium.copyWith(
-                  fontSize: Dimensions.fontSizeSmall,
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Icon(
+                  Icons.location_on,
+                  size: 14,
                   color: Theme.of(context).primaryColor,
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: Dimensions.paddingSizeSmall),
-
-          // Pickup location
-          Row(
-            children: [
-              Icon(Icons.location_on, size: 16, color: Colors.green),
-              const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Pickup',
-                      style: textMedium.copyWith(
-                        fontSize: Dimensions.fontSizeExtraSmall,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    Text(
-                      locationController.fromAddress?.address ??
-                          'Loading pickup location...',
-                      style: textRegular.copyWith(
-                        fontSize: Dimensions.fontSizeSmall,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+              const SizedBox(width: 6),
+              Text(
+                'Closest Points',
+                style: textMedium.copyWith(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
 
-          // Destination location
-          Row(
-            children: [
-              Icon(Icons.location_on, size: 16, color: Colors.red),
-              const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Destination',
-                      style: textMedium.copyWith(
-                        fontSize: Dimensions.fontSizeExtraSmall,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    Text(
-                      locationController.toAddress?.address ??
-                          'Loading destination...',
-                      style: textRegular.copyWith(
-                        fontSize: Dimensions.fontSizeSmall,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+          // Closest Pickup
+          if (widget.trip.closestPickup != null) ...[
+            _buildLocationRow(
+              Icons.directions_walk,
+              'Pickup',
+              widget.trip.closestPickup!.placeName,
+              Colors.green,
+            ),
+            const SizedBox(height: 4),
+          ],
+
+          // Closest Dropoff
+          if (widget.trip.closestDropoff != null) ...[
+            _buildLocationRow(
+              Icons.directions_walk,
+              'Dropoff',
+              widget.trip.closestDropoff!.placeName,
+              Colors.red,
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildSearchParameters(RideController rideController) {
-    return Column(
+  Widget _buildLocationRow(
+      IconData icon, String label, String address, Color color) {
+    return Row(
       children: [
-        // Date Selection
-        _buildParameterField(
-          icon: Icons.calendar_today,
-          label: 'select_date'.tr,
-          value:
-              rideController.selectedDate.isEmpty
-                  ? 'tap_to_select_date'.tr
-                  : rideController.selectedDate,
-          onTap: () => _selectDate(rideController),
+        Container(
+          width: 4,
+          height: 4,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
         ),
-        const SizedBox(height: Dimensions.paddingSizeExtraSmall),
-
-        // Gender and Seats Row
-        Row(
-          children: [
-            Expanded(
-              child: _buildDropdownField(
-                icon: Icons.person,
-                label: 'gender_preference'.tr,
-                value: rideController.selectedGender,
-                items: ['both', 'male', 'female'],
-                onChanged: (value) {
-                  rideController.setCarpoolSearchParameters(gender: value);
-                },
-              ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            address,
+            style: textRegular.copyWith(
+              fontSize: 13,
+              color: Colors.black87,
             ),
-            const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-            Expanded(
-              child: _buildDropdownField(
-                icon: Icons.people,
-                label: 'seats_needed'.tr,
-                value: rideController.selectedSeats.toString(),
-                items: ['1', '2', '3'],
-                onChanged: (value) {
-                  rideController.setCarpoolSearchParameters(
-                    seats: int.parse(value!),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: Dimensions.paddingSizeExtraSmall),
-
-        // Ride Type
-        _buildDropdownField(
-          icon: Icons.work,
-          label: 'ride_type'.tr,
-          value: rideController.selectedRideType,
-          items: ['work', 'leisure', 'shopping', 'other'],
-          onChanged: (value) {
-            rideController.setCarpoolSearchParameters(rideType: value);
-          },
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ],
     );
   }
+}
 
-  Widget _buildAvailableTrips(RideController rideController) {
-    return Container(
-      padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Available Rides (${rideController.availableTrips.length})',
-            style: textBold.copyWith(
-              fontSize: Dimensions.fontSizeSmall,
-              color: Theme.of(context).primaryColor,
-            ),
-          ),
-          const SizedBox(height: Dimensions.paddingSizeSmall),
-          ...rideController.availableTrips
-              .map((trip) => _buildTripCard(trip, rideController))
-              .toList(),
-        ],
-      ),
-    );
-  }
+Future<List<LatLng>> _getRoutePolyline(
+  LatLng origin,
+  LatLng destination,
+) async {
+  try {
+    // Use Google Maps Directions API to get the actual route
+    final String apiKey =
+        'AIzaSyCeF4BHLDezqD1pH7mlzxEchtX962QU9Os'; // From AppConstants
+    final String url = 'https://maps.googleapis.com/maps/api/directions/json?'
+        'origin=${origin.latitude},${origin.longitude}'
+        '&destination=${destination.latitude},${destination.longitude}'
+        '&key=$apiKey';
 
-  Widget _buildTripCard(dynamic trip, RideController rideController) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: Dimensions.paddingSizeSmall),
-      padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-        border: Border.all(color: Colors.grey[300]!),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with driver info and price
-          Row(
-            children: [
-              // Driver profile image
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.grey[200],
-                  border: Border.all(
-                    color: Theme.of(context).primaryColor,
-                    width: 2,
-                  ),
-                ),
-                child:
-                    (trip.driver.profileImage != null &&
-                            trip.driver.profileImage!.isNotEmpty)
-                        ? ClipOval(
-                          child: Image.network(
-                            trip.driver.profileImage!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Icon(
-                                Icons.person,
-                                size: 30,
-                                color: Theme.of(context).primaryColor,
-                              );
-                            },
-                          ),
-                        )
-                        : Icon(
-                          Icons.person,
-                          size: 30,
-                          color: Theme.of(context).primaryColor,
-                        ),
-              ),
-              const SizedBox(width: Dimensions.paddingSizeSmall),
+    final response = await http.get(Uri.parse(url));
 
-              // Driver details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      trip.driver.fullName.isNotEmpty
-                          ? trip.driver.fullName
-                          : 'Unknown Driver',
-                      style: textBold.copyWith(
-                        fontSize: Dimensions.fontSizeDefault,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Icon(Icons.person, size: 14, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Text(
-                          trip.driver.gender.isNotEmpty
-                              ? '${trip.driver.gender[0].toUpperCase()}${trip.driver.gender.substring(1)}'
-                              : 'Unknown',
-                          style: textRegular.copyWith(
-                            fontSize: Dimensions.fontSizeSmall,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
 
-              // Price
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Dimensions.paddingSizeSmall,
-                  vertical: Dimensions.paddingSizeExtraSmall,
-                ),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
-                  borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-                ),
-                child: Text(
-                  '\$${trip.price.toString()}',
-                  style: textBold.copyWith(
-                    fontSize: Dimensions.fontSizeDefault,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
+      if (data['status'] == 'OK' && data['routes'].isNotEmpty) {
+        final route = data['routes'][0];
+        final polyline = route['overview_polyline']['points'];
 
-          const SizedBox(height: Dimensions.paddingSizeSmall),
-
-          // Vehicle information
-          Container(
-            padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.directions_car,
-                  size: 20,
-                  color: Theme.of(context).primaryColor,
-                ),
-                const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${trip.vehicle.brand.isNotEmpty ? trip.vehicle.brand : 'Unknown'} ${trip.vehicle.model.isNotEmpty ? trip.vehicle.model : 'Vehicle'}',
-                        style: textMedium.copyWith(
-                          fontSize: Dimensions.fontSizeSmall,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      if (trip.vehicle.plateNumber != null &&
-                          trip.vehicle.plateNumber!.isNotEmpty)
-                        Text(
-                          'Plate: ${trip.vehicle.plateNumber}',
-                          style: textRegular.copyWith(
-                            fontSize: Dimensions.fontSizeExtraSmall,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: Dimensions.paddingSizeSmall),
-
-          // Trip details
-          Row(
-            children: [
-              Expanded(
-                child: _buildTripDetailItem(
-                  icon: Icons.access_time,
-                  label: 'Departure',
-                  value: _formatDateTime(trip.startTime),
-                ),
-              ),
-              const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-              Expanded(
-                child: _buildTripDetailItem(
-                  icon: Icons.event_seat,
-                  label: 'Available Seats',
-                  value: '${trip.seatsAvailable}',
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: Dimensions.paddingSizeExtraSmall),
-
-          // Route information
-          Container(
-            padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-            decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-              border: Border.all(color: Colors.blue[200]!),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.route, size: 16, color: Colors.blue[700]),
-                    const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-                    Text(
-                      'Route',
-                      style: textMedium.copyWith(
-                        fontSize: Dimensions.fontSizeSmall,
-                        color: Colors.blue[700],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: Dimensions.paddingSizeExtraSmall),
-
-                // Pickup location
-                Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: Colors.green,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-                    Expanded(
-                      child: Text(
-                        trip.pickupAddress,
-                        style: textRegular.copyWith(
-                          fontSize: Dimensions.fontSizeSmall,
-                          color: Colors.black87,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 4),
-
-                // Destination location
-                Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-                    Expanded(
-                      child: Text(
-                        trip.dropoffAddress,
-                        style: textRegular.copyWith(
-                          fontSize: Dimensions.fontSizeSmall,
-                          color: Colors.black87,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: Dimensions.paddingSizeSmall),
-
-          // Trip preferences
-          Wrap(
-            spacing: Dimensions.paddingSizeExtraSmall,
-            runSpacing: Dimensions.paddingSizeExtraSmall,
-            children: [
-              if (trip.isAc)
-                _buildPreferenceChip(
-                  icon: Icons.ac_unit,
-                  label: 'AC',
-                  color: Colors.blue,
-                ),
-              if (trip.isSmokingAllowed)
-                _buildPreferenceChip(
-                  icon: Icons.smoking_rooms,
-                  label: 'Smoking Allowed',
-                  color: Colors.orange,
-                ),
-              if (trip.hasMusic)
-                _buildPreferenceChip(
-                  icon: Icons.music_note,
-                  label: 'Music',
-                  color: Colors.purple,
-                ),
-              if (trip.hasScreenEntertainment)
-                _buildPreferenceChip(
-                  icon: Icons.tv,
-                  label: 'Entertainment',
-                  color: Colors.green,
-                ),
-              if (trip.allowLuggage)
-                _buildPreferenceChip(
-                  icon: Icons.work,
-                  label: 'Luggage',
-                  color: Colors.brown,
-                ),
-            ],
-          ),
-
-          const SizedBox(height: Dimensions.paddingSizeSmall),
-
-          // Age and gender restrictions
-          if (trip.allowedGender != 'both' ||
-              trip.allowedAgeMin > 0 ||
-              trip.allowedAgeMax < 100)
-            Container(
-              padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-              decoration: BoxDecoration(
-                color: Colors.orange[50],
-                borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-                border: Border.all(color: Colors.orange[200]!),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline, size: 16, color: Colors.orange[700]),
-                  const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-                  Expanded(
-                    child: Text(
-                      _getRestrictionsText(trip),
-                      style: textRegular.copyWith(
-                        fontSize: Dimensions.fontSizeSmall,
-                        color: Colors.orange[700],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          const SizedBox(height: Dimensions.paddingSizeSmall),
-
-          // Action buttons
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _showTripRoute(trip),
-                  icon: Icon(Icons.map, size: 18, color: Colors.white),
-                  label: Text(
-                    'View Route',
-                    style: textMedium.copyWith(
-                      fontSize: Dimensions.fontSizeSmall,
-                      color: Colors.white,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[600],
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: Dimensions.paddingSizeSmall,
-                      vertical: Dimensions.paddingSizeExtraSmall,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        Dimensions.radiusSmall,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _selectTrip(trip, rideController),
-                  icon: Icon(Icons.check_circle, size: 18, color: Colors.white),
-                  label: Text(
-                    'Join Trip',
-                    style: textMedium.copyWith(
-                      fontSize: Dimensions.fontSizeSmall,
-                      color: Colors.white,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: Dimensions.paddingSizeSmall,
-                      vertical: Dimensions.paddingSizeExtraSmall,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        Dimensions.radiusSmall,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTripDetailItem({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 14, color: Colors.grey[600]),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                style: textMedium.copyWith(
-                  fontSize: Dimensions.fontSizeExtraSmall,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: textRegular.copyWith(
-              fontSize: Dimensions.fontSizeSmall,
-              color: Colors.black87,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPreferenceChip({
-    required IconData icon,
-    required String label,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: Dimensions.paddingSizeExtraSmall,
-        vertical: 4,
-      ),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: textRegular.copyWith(
-              fontSize: Dimensions.fontSizeExtraSmall,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _formatDateTime(String dateTimeString) {
-    try {
-      DateTime dateTime = DateTime.parse(dateTimeString);
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
-    } catch (e) {
-      return dateTimeString;
-    }
-  }
-
-  String _getRestrictionsText(dynamic trip) {
-    List<String> restrictions = [];
-
-    if (trip.allowedGender != 'both') {
-      String genderText =
-          trip.allowedGender.isNotEmpty
-              ? '${trip.allowedGender[0].toUpperCase()}${trip.allowedGender.substring(1)}'
-              : 'Unknown';
-      restrictions.add('$genderText only');
-    }
-
-    if (trip.allowedAgeMin > 0 || trip.allowedAgeMax < 100) {
-      String ageRange = '';
-      if (trip.allowedAgeMin > 0 && trip.allowedAgeMax < 100) {
-        ageRange = 'Age ${trip.allowedAgeMin}-${trip.allowedAgeMax}';
-      } else if (trip.allowedAgeMin > 0) {
-        ageRange = 'Age ${trip.allowedAgeMin}+';
-      } else if (trip.allowedAgeMax < 100) {
-        ageRange = 'Age under ${trip.allowedAgeMax}';
-      }
-      if (ageRange.isNotEmpty) {
-        restrictions.add(ageRange);
-      }
-    }
-
-    return restrictions.isEmpty ? 'No restrictions' : restrictions.join(', ');
-  }
-
-  void _showTripRoute(dynamic trip) async {
-    // Show loading dialog first
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Theme.of(context).primaryColor,
-                  ),
-                ),
-                const SizedBox(width: Dimensions.paddingSizeDefault),
-                Text(
-                  'Loading route...',
-                  style: textMedium.copyWith(
-                    fontSize: Dimensions.fontSizeDefault,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-
-    try {
-      // Use the encoded polyline from the trip data if available
-      List<LatLng> routePoints = [];
-
-      if (trip.encodedPolyline != null && trip.encodedPolyline!.isNotEmpty) {
-        // Decode the polyline from the trip data
-        routePoints = _decodeEncodedPolyline(trip.encodedPolyline!);
-        print('Using encoded polyline from trip data: ${trip.encodedPolyline}');
+        // Decode the polyline using the existing method from MapController
+        return _decodeEncodedPolyline(polyline);
       } else {
-        // Fallback to Google Maps Directions API if no encoded polyline
-        print('No encoded polyline found, using Google Maps API');
-        routePoints = await _getRoutePolyline(
-          LatLng(trip.dropoffMatchPoint.lat, trip.dropoffMatchPoint.lng),
-          LatLng(trip.pickupMatchPoint.lat, trip.pickupMatchPoint.lng),
-        );
+        throw Exception('No route found: ${data['status']}');
       }
-
-      // Close loading dialog
-      Navigator.of(context).pop();
-
-      // Show route dialog
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-            ),
-            child: Container(
-              height: MediaQuery.of(context).size.height * 0.7,
-              width: MediaQuery.of(context).size.width * 0.9,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
-              ),
-              child: Column(
-                children: [
-                  // Header
-                  Container(
-                    padding: const EdgeInsets.all(
-                      Dimensions.paddingSizeDefault,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(Dimensions.radiusDefault),
-                        topRight: Radius.circular(Dimensions.radiusDefault),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.route, color: Colors.white, size: 24),
-                        const SizedBox(width: Dimensions.paddingSizeSmall),
-                        Expanded(
-                          child: Text(
-                            'Trip Route',
-                            style: textBold.copyWith(
-                              fontSize: Dimensions.fontSizeLarge,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: Icon(Icons.close, color: Colors.white),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Map
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(Dimensions.radiusDefault),
-                        bottomRight: Radius.circular(Dimensions.radiusDefault),
-                      ),
-                      child: GoogleMap(
-                        initialCameraPosition: CameraPosition(
-                          target: LatLng(
-                            (trip.pickupMatchPoint.lat +
-                                    trip.dropoffMatchPoint.lat) /
-                                2,
-                            (trip.pickupMatchPoint.lng +
-                                    trip.dropoffMatchPoint.lng) /
-                                2,
-                          ),
-                          zoom: 12,
-                        ),
-                        markers: {
-                          Marker(
-                            markerId: const MarkerId('pickup'),
-                            position: LatLng(
-                              trip.pickupMatchPoint.lat,
-                              trip.pickupMatchPoint.lng,
-                            ),
-                            icon: BitmapDescriptor.defaultMarkerWithHue(
-                              BitmapDescriptor.hueGreen,
-                            ),
-                            infoWindow: InfoWindow(
-                              title: 'Pickup',
-                              snippet: trip.pickupAddress,
-                            ),
-                          ),
-                          Marker(
-                            markerId: const MarkerId('dropoff'),
-                            position: LatLng(
-                              trip.dropoffMatchPoint.lat,
-                              trip.dropoffMatchPoint.lng,
-                            ),
-                            icon: BitmapDescriptor.defaultMarkerWithHue(
-                              BitmapDescriptor.hueRed,
-                            ),
-                            infoWindow: InfoWindow(
-                              title: 'Destination',
-                              snippet: trip.dropoffAddress,
-                            ),
-                          ),
-                        },
-                        polylines: {
-                          Polyline(
-                            polylineId: const PolylineId('route'),
-                            points: routePoints,
-                            color: Theme.of(context).primaryColor,
-                            width: 5,
-                          ),
-                        },
-                        zoomControlsEnabled: false,
-                        mapToolbarEnabled: false,
-                        onMapCreated: (GoogleMapController controller) {
-                          // Fit the map to show the entire route
-                          if (routePoints.isNotEmpty) {
-                            controller.animateCamera(
-                              CameraUpdate.newLatLngBounds(
-                                _getBounds(routePoints),
-                                50.0,
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      );
-    } catch (e) {
-      // Close loading dialog
-      Navigator.of(context).pop();
-
-      // Show error message
-      Get.snackbar(
-        'Error',
-        'Failed to load route: ${e.toString()}',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+    } else {
+      throw Exception('Failed to get route: ${response.statusCode}');
     }
+  } catch (e) {
+    print('Error getting route: $e');
+    // Fallback to straight line if API fails
+    return [origin, destination];
   }
+}
 
-  Future<List<LatLng>> _getRoutePolyline(
-    LatLng origin,
-    LatLng destination,
-  ) async {
-    try {
-      // Use Google Maps Directions API to get the actual route
-      final String apiKey =
-          'AIzaSyCeF4BHLDezqD1pH7mlzxEchtX962QU9Os'; // From AppConstants
-      final String url =
-          'https://maps.googleapis.com/maps/api/directions/json?'
-          'origin=${origin.latitude},${origin.longitude}'
-          '&destination=${destination.latitude},${destination.longitude}'
-          '&key=$apiKey';
+List<LatLng> _decodeEncodedPolyline(String encoded) {
+  try {
+    if (encoded.isEmpty) return [];
 
-      final response = await http.get(Uri.parse(url));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-
-        if (data['status'] == 'OK' && data['routes'].isNotEmpty) {
-          final route = data['routes'][0];
-          final polyline = route['overview_polyline']['points'];
-
-          // Decode the polyline using the existing method from MapController
-          return _decodeEncodedPolyline(polyline);
-        } else {
-          throw Exception('No route found: ${data['status']}');
-        }
-      } else {
-        throw Exception('Failed to get route: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error getting route: $e');
-      // Fallback to straight line if API fails
-      return [origin, destination];
-    }
-  }
-
-  List<LatLng> _decodeEncodedPolyline(String encoded) {
     List<LatLng> poly = [];
     int index = 0, len = encoded.length;
     int lat = 0, lng = 0;
@@ -1397,285 +2144,658 @@ class _RideExpendableBottomSheetState extends State<RideExpendableBottomSheet> {
       poly.add(p);
     }
     return poly;
+  } catch (e) {
+    print('Error decoding polyline: $e');
+    return [];
+  }
+}
+
+LatLngBounds _getBounds(List<LatLng> points) {
+  double? minLat, maxLat, minLng, maxLng;
+
+  for (LatLng point in points) {
+    minLat = minLat == null ? point.latitude : min(minLat, point.latitude);
+    maxLat = maxLat == null ? point.latitude : max(maxLat, point.latitude);
+    minLng = minLng == null ? point.longitude : min(minLng, point.longitude);
+    maxLng = maxLng == null ? point.longitude : max(maxLng, point.longitude);
   }
 
-  LatLngBounds _getBounds(List<LatLng> points) {
-    double? minLat, maxLat, minLng, maxLng;
+  return LatLngBounds(
+    southwest: LatLng(minLat!, minLng!),
+    northeast: LatLng(maxLat!, maxLng!),
+  );
+}
 
-    for (LatLng point in points) {
-      minLat = minLat == null ? point.latitude : min(minLat, point.latitude);
-      maxLat = maxLat == null ? point.latitude : max(maxLat, point.latitude);
-      minLng = minLng == null ? point.longitude : min(minLng, point.longitude);
-      maxLng = maxLng == null ? point.longitude : max(maxLng, point.longitude);
-    }
-
-    return LatLngBounds(
-      southwest: LatLng(minLat!, minLng!),
-      northeast: LatLng(maxLat!, maxLng!),
-    );
-  }
-
-  Widget _buildParameterField({
-    required IconData icon,
-    required String label,
-    required String value,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-          border: Border.all(color: Colors.grey[300]!, width: 1),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
+Widget _buildParameterField({
+  required IconData icon,
+  required String label,
+  required String value,
+  required VoidCallback onTap,
+  required BuildContext context,
+}) {
+  return TweenAnimationBuilder<double>(
+    duration: const Duration(milliseconds: 600),
+    tween: Tween(begin: 0.0, end: 1.0),
+    builder: (context, animationValue, child) {
+      return Transform.translate(
+        offset: Offset(0, 20 * (1 - animationValue)),
+        child: Opacity(
+          opacity: animationValue,
+          child: GestureDetector(
+            onTap: onTap,
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-                shape: BoxShape.circle,
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    spreadRadius: 0,
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+                border: Border.all(
+                  color: Colors.grey[200]!,
+                  width: 1,
+                ),
               ),
-              child: Icon(icon, size: 16, color: Colors.white),
-            ),
-            const SizedBox(width: Dimensions.paddingSizeSmall),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text(
-                    label,
-                    style: textMedium.copyWith(
-                      fontSize: Dimensions.fontSizeExtraSmall,
+                  // Icon
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      icon,
+                      size: 18,
                       color: Theme.of(context).primaryColor,
                     ),
                   ),
-                  const SizedBox(height: 1),
-                  Text(
-                    value,
-                    style: textRegular.copyWith(
-                      fontSize: Dimensions.fontSizeSmall,
-                      color: Colors.black87,
+                  const SizedBox(width: 12),
+
+                  // Content
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          label,
+                          style: textMedium.copyWith(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          value,
+                          style: textRegular.copyWith(
+                            fontSize: 14,
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
+                  ),
+
+                  // Arrow
+                  Icon(
+                    Icons.chevron_right,
+                    size: 20,
+                    color: Colors.grey[400],
                   ),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey[400]),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDropdownField({
-    required IconData icon,
-    required String label,
-    required String value,
-    required List<String> items,
-    required Function(String?) onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(Dimensions.paddingSizeSmall),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(Dimensions.radiusSmall),
-        border: Border.all(color: Colors.grey[300]!, width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, size: 12, color: Colors.white),
-              ),
-              const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-              Text(
-                label,
-                style: textMedium.copyWith(
-                  fontSize: Dimensions.fontSizeExtraSmall,
-                  color: Theme.of(context).primaryColor,
-                ),
-              ),
-            ],
           ),
-          const SizedBox(height: 4),
-          DropdownButton<String>(
-            value: value,
-            isExpanded: true,
-            underline: const SizedBox(),
-            dropdownColor: Colors.white,
-            icon: Icon(
-              Icons.arrow_drop_down,
-              size: 16,
-              color: Colors.grey[600],
+        ),
+      );
+    },
+  );
+}
+
+Widget _buildDropdownField({
+  required IconData icon,
+  required String label,
+  required String value,
+  required List<String> items,
+  required Function(String?) onChanged,
+  required BuildContext context,
+}) {
+  return TweenAnimationBuilder<double>(
+    duration: const Duration(milliseconds: 600),
+    tween: Tween(begin: 0.0, end: 1.0),
+    builder: (context, animationValue, child) {
+      return Transform.translate(
+        offset: Offset(0, 20 * (1 - animationValue)),
+        child: Opacity(
+          opacity: animationValue,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  spreadRadius: 0,
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+              border: Border.all(
+                color: Colors.grey[200]!,
+                width: 1,
+              ),
             ),
-            style: textRegular.copyWith(
-              fontSize: Dimensions.fontSizeSmall,
-              color: Colors.black87,
-            ),
-            items:
-                items.map((String item) {
-                  return DropdownMenuItem<String>(
-                    value: item,
-                    child: Text(
-                      item.capitalizeFirst!,
-                      style: textRegular.copyWith(
-                        fontSize: Dimensions.fontSizeSmall,
-                        color: Colors.black87,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with Icon and Label
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Icon(
+                        icon,
+                        size: 14,
+                        color: Theme.of(context).primaryColor,
                       ),
                     ),
-                  );
-                }).toList(),
-            onChanged: onChanged,
-          ),
-        ],
-      ),
-    );
-  }
+                    const SizedBox(width: 8),
+                    Text(
+                      label,
+                      style: textMedium.copyWith(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
 
-  void _selectDate(RideController rideController) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 60)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: const Color.fromARGB(
-                255,
-                0,
-                0,
-                0,
-              ), // Primary color for selected date
-              onPrimary: Colors.white, // Text color on selected date
-              surface:
-                  Theme.of(context).brightness == Brightness.dark
-                      ? const Color(0xFF242424)
-                      : Colors.white, // Background color
-              onSurface:
-                  Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white
-                      : const Color(0xff1D2D2B), // Text color for dates
-              onSurfaceVariant:
-                  Theme.of(context).brightness == Brightness.dark
-                      ? Colors.grey[300]
-                      : Colors.grey[600], // Text color for other dates
+                // Dropdown Container
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.grey[300]!,
+                      width: 1,
+                    ),
+                  ),
+                  child: DropdownButton<String>(
+                    value: value,
+                    isExpanded: true,
+                    underline: const SizedBox(),
+                    dropdownColor: Colors.white,
+                    icon: Icon(
+                      Icons.keyboard_arrow_down,
+                      size: 18,
+                      color: Colors.grey[600],
+                    ),
+                    style: textRegular.copyWith(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    items: items.map((String item) {
+                      return DropdownMenuItem<String>(
+                        value: item,
+                        child: Text(
+                          item.capitalizeFirst!,
+                          style: textRegular.copyWith(
+                            fontSize: 14,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: onChanged,
+                  ),
+                ),
+              ],
             ),
-            dialogBackgroundColor:
-                Theme.of(context).brightness == Brightness.dark
-                    ? const Color(0xFF242424)
-                    : Colors.white,
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: const Color.fromARGB(
+          ),
+        ),
+      );
+    },
+  );
+}
+
+void _selectDate(RideController rideController, BuildContext context) async {
+  final DateTime? picked = await showDatePicker(
+    context: context,
+    initialDate: DateTime.now(),
+    firstDate: DateTime.now(),
+    lastDate: DateTime.now().add(const Duration(days: 60)),
+    builder: (context, child) {
+      return Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: Theme.of(context).colorScheme.copyWith(
+                primary: const Color.fromARGB(
                   255,
                   0,
                   0,
                   0,
-                ), // Button text color
+                ), // Primary color for selected date
+                onPrimary: Colors.white, // Text color on selected date
+                surface: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF242424)
+                    : Colors.white, // Background color
+                onSurface: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white
+                    : const Color(0xff1D2D2B), // Text color for dates
+                onSurfaceVariant:
+                    Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey[300]
+                        : Colors.grey[600], // Text color for other dates
               ),
+          dialogBackgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF242424)
+              : Colors.white,
+          textButtonTheme: TextButtonThemeData(
+            style: TextButton.styleFrom(
+              foregroundColor: const Color.fromARGB(
+                255,
+                0,
+                0,
+                0,
+              ), // Button text color
             ),
           ),
-          child: child!,
-        );
-      },
-    );
+        ),
+        child: child!,
+      );
+    },
+  );
 
-    if (picked != null) {
-      String formattedDate =
-          '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
-      rideController.setCarpoolSearchParameters(date: formattedDate);
-    }
+  if (picked != null) {
+    String formattedDate =
+        '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+    rideController.setCarpoolSearchParameters(date: formattedDate);
+  }
+}
+
+Future<void> _searchForCarpoolRides(RideController rideController) async {
+  if (rideController.pickupAddress == null ||
+      rideController.destinationAddress == null) {
+    Get.snackbar(
+      'Error',
+      'Please select both pickup and destination locations',
+    );
+    return;
   }
 
-  Future<void> _searchForCarpoolRides(RideController rideController) async {
-    if (rideController.pickupAddress == null ||
-        rideController.destinationAddress == null) {
-      Get.snackbar(
-        'Error',
-        'Please select both pickup and destination locations',
-      );
-      return;
-    }
+  if (rideController.selectedDate.isEmpty) {
+    Get.snackbar('Error', 'Please select a date');
+    return;
+  }
 
-    if (rideController.selectedDate.isEmpty) {
-      Get.snackbar('Error', 'Please select a date');
-      return;
-    }
+  // Set searching state
+  rideController.setSearchingTrips(true);
 
-    // Set searching state
-    rideController.setSearchingTrips(true);
+  try {
+    // Create the request object
+    FindMatchRequest request = FindMatchRequest(
+      pickupLat: rideController.pickupAddress!.latitude!,
+      pickupLng: rideController.pickupAddress!.longitude!,
+      dropoffLat: rideController.destinationAddress!.latitude!,
+      dropoffLng: rideController.destinationAddress!.longitude!,
+      day: rideController.selectedDate,
+      gender: rideController.selectedGender,
+      seatsRequired: rideController.selectedSeats,
+      rideType: rideController.selectedRideType,
+    );
 
-    try {
-      // Create the request object
-      FindMatchRequest request = FindMatchRequest(
-        pickupLat: rideController.pickupAddress!.latitude!,
-        pickupLng: rideController.pickupAddress!.longitude!,
-        dropoffLat: rideController.destinationAddress!.latitude!,
-        dropoffLng: rideController.destinationAddress!.longitude!,
-        day: rideController.selectedDate,
-        gender: rideController.selectedGender,
-        seatsRequired: rideController.selectedSeats,
-        rideType: rideController.selectedRideType,
-      );
+    // Make the API call using RideController's poolService
+    FindMatchResponse? response =
+        await rideController.poolService.findMatchingRides(request);
 
-      // Make the API call using RideController's poolService
-      FindMatchResponse? response = await rideController.poolService
-          .findMatchingRides(request);
+    // Process the response
+    if (response != null && response.responseCode == 'default_200') {
+      // Clear previous results
+      rideController.availableTrips.clear();
+      rideController.availableTrips.addAll(response.data);
+      rideController.update();
 
-      // Process the response
-      if (response != null && response.responseCode == 'default_200') {
-        // Clear previous results
-        rideController.availableTrips.clear();
-        rideController.availableTrips.addAll(response.data);
-        rideController.update();
-
-        if (rideController.availableTrips.isEmpty) {
-          Get.snackbar('No Rides Found', 'Try different route or date');
-        } else {
-          print(
-            'Found ${rideController.availableTrips.length} rides successfully',
-          );
-        }
+      if (rideController.availableTrips.isEmpty) {
+        Get.snackbar('No Rides Found', 'Try different route or date');
       } else {
-        rideController.availableTrips.clear();
-        rideController.update();
-        Get.snackbar(
-          'Error',
-          response?.message ?? 'Failed to search for trips',
+        print(
+          'Found ${rideController.availableTrips.length} rides successfully',
         );
       }
-    } catch (e) {
+    } else {
       rideController.availableTrips.clear();
       rideController.update();
-      Get.snackbar('Error', 'Failed to search for trips: ${e.toString()}');
-    } finally {
-      rideController.setSearchingTrips(false);
+      Get.snackbar(
+        'Error',
+        response?.message ?? 'Failed to search for trips',
+      );
     }
+  } catch (e) {
+    rideController.availableTrips.clear();
+    rideController.update();
+    Get.snackbar('Error', 'Failed to search for trips: ${e.toString()}');
+  } finally {
+    rideController.setSearchingTrips(false);
+  }
+}
+
+void _navigateToTripDetails(
+    dynamic trip, RideController rideController, BuildContext context) {
+  Get.to(() => TripDetailsScreen(
+        trip: trip,
+        rideController: rideController,
+      ));
+}
+
+void _selectTrip(dynamic trip, RideController rideController) {
+  rideController.selectCarpoolTrip(trip);
+}
+
+void _showRouteMap(dynamic trip, BuildContext context) {
+  showDialog(
+    context: context,
+    barrierDismissible: true,
+    builder: (BuildContext context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.8,
+          width: MediaQuery.of(context).size.width * 0.95,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: Colors.white,
+          ),
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    Expanded(
+                      child: Text(
+                        'Trip Route',
+                        style: textBold.copyWith(
+                          fontSize: Dimensions.fontSizeLarge,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Map
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
+                  ),
+                  child: GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: LatLng(
+                        trip.pickupMatchPoint.lat,
+                        trip.pickupMatchPoint.lng,
+                      ),
+                      zoom: 13,
+                    ),
+                    zoomControlsEnabled: true,
+                    zoomGesturesEnabled: true,
+                    scrollGesturesEnabled: true,
+                    rotateGesturesEnabled: true,
+                    tiltGesturesEnabled: true,
+                    myLocationEnabled: false,
+                    myLocationButtonEnabled: false,
+                    mapToolbarEnabled: true,
+                    compassEnabled: true,
+                    markers: {
+                      // Main pickup point
+                      Marker(
+                        markerId: const MarkerId('pickup'),
+                        position: LatLng(
+                          trip.pickupMatchPoint.lat,
+                          trip.pickupMatchPoint.lng,
+                        ),
+                        icon: BitmapDescriptor.defaultMarkerWithHue(
+                          BitmapDescriptor.hueGreen,
+                        ),
+                        infoWindow: InfoWindow(
+                          title: 'Pickup Point',
+                          snippet: trip.pickupAddress,
+                        ),
+                      ),
+                      // Main dropoff point
+                      Marker(
+                        markerId: const MarkerId('dropoff'),
+                        position: LatLng(
+                          trip.dropoffMatchPoint.lat,
+                          trip.dropoffMatchPoint.lng,
+                        ),
+                        icon: BitmapDescriptor.defaultMarkerWithHue(
+                          BitmapDescriptor.hueRed,
+                        ),
+                        infoWindow: InfoWindow(
+                          title: 'Dropoff Point',
+                          snippet: trip.dropoffAddress,
+                        ),
+                      ),
+                      // Closest pickup point if available
+                      if (trip.closestPickup != null)
+                        Marker(
+                          markerId: const MarkerId('closest_pickup'),
+                          position: LatLng(
+                            trip.closestPickup!.lat,
+                            trip.closestPickup!.lng,
+                          ),
+                          icon: BitmapDescriptor.defaultMarkerWithHue(
+                            BitmapDescriptor.hueAzure,
+                          ),
+                          infoWindow: InfoWindow(
+                            title: 'Your Closest Pickup Point',
+                            snippet: trip.closestPickup!.placeName,
+                          ),
+                        ),
+                      // Closest dropoff point if available
+                      if (trip.closestDropoff != null)
+                        Marker(
+                          markerId: const MarkerId('closest_dropoff'),
+                          position: LatLng(
+                            trip.closestDropoff!.lat,
+                            trip.closestDropoff!.lng,
+                          ),
+                          icon: BitmapDescriptor.defaultMarkerWithHue(
+                            BitmapDescriptor.hueOrange,
+                          ),
+                          infoWindow: InfoWindow(
+                            title: 'Your Closest Dropoff Point',
+                            snippet: trip.closestDropoff!.placeName,
+                          ),
+                        ),
+                    },
+                    polylines: trip.encodedPolyline != null &&
+                            trip.encodedPolyline!.isNotEmpty
+                        ? {
+                            Polyline(
+                              polylineId: const PolylineId('route'),
+                              points:
+                                  _decodeEncodedPolyline(trip.encodedPolyline!),
+                              color: Theme.of(context).primaryColor,
+                              width: 4,
+                            ),
+                          }
+                        : {},
+                    onMapCreated: (controller) {
+                      Future.delayed(const Duration(milliseconds: 200), () {
+                        _fitMapBounds(controller, trip);
+                      });
+                    },
+                  ),
+                ),
+              ),
+              // Bottom actions
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    if (trip.closestPickup != null &&
+                        trip.closestPickup!.lat != null &&
+                        trip.closestPickup!.lng != null) ...[
+                      ElevatedButton.icon(
+                        onPressed: () => _openInGoogleMaps(
+                          trip.closestPickup!.lat,
+                          trip.closestPickup!.lng,
+                        ),
+                        icon: const Icon(Icons.directions),
+                        label: const Text('Navigate to Meeting Point'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).primaryColor,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 45),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    Text(
+                      'Walking distance to pickup: ${_calculateDistance(
+                        trip.pickupMatchPoint.lat,
+                        trip.pickupMatchPoint.lng,
+                        trip.closestPickup?.lat ?? trip.pickupMatchPoint.lat,
+                        trip.closestPickup?.lng ?? trip.pickupMatchPoint.lng,
+                      )} km',
+                      style: textMedium.copyWith(
+                        fontSize: Dimensions.fontSizeSmall,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+void _fitMapBounds(GoogleMapController controller, dynamic trip) {
+  double minLat = double.infinity;
+  double maxLat = -double.infinity;
+  double minLng = double.infinity;
+  double maxLng = -double.infinity;
+
+  void updateBounds(double lat, double lng) {
+    minLat = min(minLat, lat);
+    maxLat = max(maxLat, lat);
+    minLng = min(minLng, lng);
+    maxLng = max(maxLng, lng);
   }
 
-  void _selectTrip(dynamic trip, RideController rideController) {
-    rideController.selectCarpoolTrip(trip);
+  // Include all points in bounds
+  updateBounds(trip.pickupMatchPoint.lat, trip.pickupMatchPoint.lng);
+  updateBounds(trip.dropoffMatchPoint.lat, trip.dropoffMatchPoint.lng);
+  if (trip.closestPickup != null) {
+    updateBounds(trip.closestPickup!.lat, trip.closestPickup!.lng);
+  }
+  if (trip.closestDropoff != null) {
+    updateBounds(trip.closestDropoff!.lat, trip.closestDropoff!.lng);
+  }
 
+  // Add padding
+  final bounds = LatLngBounds(
+    southwest: LatLng(minLat, minLng),
+    northeast: LatLng(maxLat, maxLng),
+  );
+
+  controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+}
+
+void _openInGoogleMaps(double lat, double lng) async {
+  try {
+    // Use Google Maps directions URL to navigate to the meeting point
+    final url =
+        'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving';
+
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    } else {
+      // Fallback to search URL
+      final fallbackUrl = 'https://maps.google.com/maps?q=$lat,$lng';
+      if (await canLaunchUrl(Uri.parse(fallbackUrl))) {
+        await launchUrl(Uri.parse(fallbackUrl),
+            mode: LaunchMode.externalApplication);
+      } else {
+        // Second fallback
+        final secondFallbackUrl =
+            'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
+        if (await canLaunchUrl(Uri.parse(secondFallbackUrl))) {
+          await launchUrl(Uri.parse(secondFallbackUrl),
+              mode: LaunchMode.externalApplication);
+        } else {
+          Get.snackbar(
+            'Error',
+            'Could not open Google Maps. Please install Google Maps app.',
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+        }
+      }
+    }
+  } catch (e) {
+    print('Error opening Google Maps: $e');
     Get.snackbar(
-      'Trip Selected',
-      'You have selected a carpool trip. Proceeding with ride request...',
-      backgroundColor: Colors.green,
+      'Error',
+      'Could not open Google Maps. Please try again.',
+      backgroundColor: Colors.red,
       colorText: Colors.white,
     );
-
-    // Here you can add logic to submit the ride request with the selected trip
-    // For example, call a method to submit the carpool ride request
   }
+}
+
+double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+  var p = 0.017453292519943295; // Math.PI / 180
+  var c = cos;
+  var a = 0.5 -
+      c((lat2 - lat1) * p) / 2 +
+      c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p)) / 2;
+  return 12742 * asin(sqrt(a)); // 2 * R; R = 6371 km
 }

@@ -453,6 +453,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           false)
                                         const HomeReferralViewWidget(),
                                       const BestOfferWidget(),
+                                      const SizedBox(height: 20),
                                       const AppAdvertising(),
                                       const SizedBox(
                                           height: Dimensions.paddingSizeLarge),

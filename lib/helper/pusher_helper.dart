@@ -13,13 +13,16 @@ import 'package:ride_sharing_user_app/features/ride/widgets/confirmation_trip_di
 import 'package:ride_sharing_user_app/features/splash/controllers/config_controller.dart';
 
 class PusherHelper {
-  static PusherChannelsClient?  pusherClient;
-  static initializePusher() async{
+  static PusherChannelsClient? pusherClient;
+  static initializePusher() async {
     PusherChannelsOptions testOptions = PusherChannelsOptions.fromHost(
       host: Get.find<ConfigController>().config!.webSocketUrl ?? '',
-      scheme: Get.find<ConfigController>().config!.websocketScheme == 'https' ? 'wss' : 'ws',
+      scheme: Get.find<ConfigController>().config!.websocketScheme == 'https'
+          ? 'wss'
+          : 'ws',
       key: Get.find<ConfigController>().config!.webSocketKey ?? '',
-      port: int.parse(Get.find<ConfigController>().config?.webSocketPort ?? '6001'),
+      port: int.parse(
+          Get.find<ConfigController>().config?.webSocketPort ?? '6001'),
     );
 
     pusherClient = PusherChannelsClient.websocket(
@@ -32,16 +35,15 @@ class PusherHelper {
 
     await pusherClient?.connect();
 
-    String? pusherChannelId =  pusherClient?.channelsManager.channelsConnectionDelegate.socketId;
-    if(pusherChannelId != null){
+    String? pusherChannelId =
+        pusherClient?.channelsManager.channelsConnectionDelegate.socketId;
+    if (pusherChannelId != null) {
       Get.find<ConfigController>().setPusherStatus('Connected');
     }
-
 
     pusherClient?.lifecycleStream.listen((event) {
       Get.find<ConfigController>().setPusherStatus('Disconnected');
     });
-
   }
 
 /*  static PusherClient? pusherClient;
@@ -77,33 +79,44 @@ class PusherHelper {
   late PrivateChannel driverTripCompleted;
   late PrivateChannel driverPaymentReceived;
 
-  void pusherDriverStatus(String tripId){
+  void pusherDriverStatus(String tripId) {
+    if (Get.find<ConfigController>().pusherConnectionStatus != null ||
+        Get.find<ConfigController>().pusherConnectionStatus == 'Connected') {
+      pusherDriverAccepted = pusherClient!.privateChannel(
+          "private-driver-trip-accepted.$tripId",
+          authorizationDelegate:
+              EndpointAuthorizableChannelTokenAuthorizationDelegate
+                  .forPrivateChannel(
+            authorizationEndpoint: Uri.parse(
+                'https://${Get.find<ConfigController>().config!.webSocketUrl}/broadcasting/auth'),
+            headers: {
+              "Accept": "application/json",
+              "Authorization":
+                  "Bearer ${Get.find<AuthController>().getUserToken()}",
+              "Access-Control-Allow-Origin": "*",
+              'Access-Control-Allow-Methods': "PUT, GET, POST, DELETE, OPTIONS"
+            },
+          ));
 
-    if (Get.find<ConfigController>().pusherConnectionStatus != null || Get.find<ConfigController>().pusherConnectionStatus == 'Connected'){
-      pusherDriverAccepted = pusherClient!.privateChannel("private-driver-trip-accepted.$tripId", authorizationDelegate:
-      EndpointAuthorizableChannelTokenAuthorizationDelegate.forPrivateChannel(
-        authorizationEndpoint: Uri.parse('https://${Get.find<ConfigController>().config!.webSocketUrl}/broadcasting/auth'),
-        headers:  {
-          "Accept": "application/json",
-          "Authorization": "Bearer ${Get.find<AuthController>().getUserToken()}",
-          "Access-Control-Allow-Origin": "*",
-          'Access-Control-Allow-Methods':"PUT, GET, POST, DELETE, OPTIONS"
-        },
-      ));
-
-      if(pusherDriverAccepted.currentStatus ==  null){
+      if (pusherDriverAccepted.currentStatus == null) {
         pusherDriverAccepted.subscribe();
-        pusherDriverAccepted.bind("driver-trip-accepted.$tripId").listen((event) {
+        pusherDriverAccepted
+            .bind("driver-trip-accepted.$tripId")
+            .listen((event) {
           Get.back();
-          Get.find<RideController>().getRideDetails(jsonDecode(event.data!)['id']).then((value){
-            if(value.statusCode == 200){
-              if(jsonDecode(event.data!)['type'] == 'parcel'){
-                Get.find<ParcelController>().updateParcelState(ParcelDeliveryState.acceptRider);
+          Get.find<RideController>()
+              .getRideDetails(jsonDecode(event.data!)['id'])
+              .then((value) {
+            if (value.statusCode == 200) {
+              if (jsonDecode(event.data!)['type'] == 'parcel') {
+                Get.find<ParcelController>()
+                    .updateParcelState(ParcelDeliveryState.acceptRider);
                 Get.find<RideController>().startLocationRecord();
                 Get.find<MapController>().notifyMapController();
                 Get.to(() => const MapScreen(fromScreen: MapScreenType.parcel));
-              }else{
-                Get.find<RideController>().updateRideCurrentState(RideState.acceptingRider);
+              } else {
+                Get.find<RideController>()
+                    .updateRideCurrentState(RideState.acceptingRider);
                 Get.find<RideController>().startLocationRecord();
                 Get.find<MapController>().notifyMapController();
                 Get.to(() => const MapScreen(fromScreen: MapScreenType.splash));
@@ -114,113 +127,155 @@ class PusherHelper {
         });
       }
 
+      driverTripStarted = pusherClient!.privateChannel(
+          "private-driver-trip-started.$tripId",
+          authorizationDelegate:
+              EndpointAuthorizableChannelTokenAuthorizationDelegate
+                  .forPrivateChannel(
+            authorizationEndpoint: Uri.parse(
+                'https://${Get.find<ConfigController>().config!.webSocketUrl}/broadcasting/auth'),
+            headers: {
+              "Accept": "application/json",
+              "Authorization":
+                  "Bearer ${Get.find<AuthController>().getUserToken()}",
+              "Access-Control-Allow-Origin": "*",
+              'Access-Control-Allow-Methods': "PUT, GET, POST, DELETE, OPTIONS"
+            },
+          ));
 
-
-      driverTripStarted = pusherClient!.privateChannel("private-driver-trip-started.$tripId", authorizationDelegate:
-      EndpointAuthorizableChannelTokenAuthorizationDelegate.forPrivateChannel(
-        authorizationEndpoint: Uri.parse('https://${Get.find<ConfigController>().config!.webSocketUrl}/broadcasting/auth'),
-        headers:  {
-          "Accept": "application/json",
-          "Authorization": "Bearer ${Get.find<AuthController>().getUserToken()}",
-          "Access-Control-Allow-Origin": "*",
-          'Access-Control-Allow-Methods':"PUT, GET, POST, DELETE, OPTIONS"
-        },
-      ));
-
-      if(driverTripStarted.currentStatus == null){
+      if (driverTripStarted.currentStatus == null) {
         driverTripStarted.subscribe();
         driverTripStarted.bind("driver-trip-started.$tripId").listen((event) {
           //   Get.find<MapController>().getPolyline();
           Get.find<RideController>().startLocationRecord();
-          if(jsonDecode(event.data!)['type']== 'parcel'){
+          if (jsonDecode(event.data!)['type'] == 'parcel') {
             Get.find<MapController>().getPolyline();
-            Get.find<ParcelController>().updateParcelState(ParcelDeliveryState.parcelOngoing);
+            Get.find<ParcelController>()
+                .updateParcelState(ParcelDeliveryState.parcelOngoing);
 
-            if(Get.find<RideController>().tripDetails == null ){
-              Get.find<RideController>().getRideDetails(jsonDecode(event.data!)['id']).then((value) {
-                if (Get.find<RideController>().tripDetails!.parcelInformation!.payer == 'sender') {
-                  Get.find<RideController>().getFinalFare(jsonDecode(event.data!)['id']).then((value) {
+            if (Get.find<RideController>().tripDetails == null) {
+              Get.find<RideController>()
+                  .getRideDetails(jsonDecode(event.data!)['id'])
+                  .then((value) {
+                if (Get.find<RideController>()
+                        .tripDetails!
+                        .parcelInformation!
+                        .payer ==
+                    'sender') {
+                  Get.find<RideController>()
+                      .getFinalFare(jsonDecode(event.data!)['id'])
+                      .then((value) {
                     if (value.statusCode == 200) {
                       //  Get.find<ParcelController>().updateParcelState(ParcelDeliveryState.parcelComplete);
                       Get.find<MapController>().notifyMapController();
-                      Get.off(() => const PaymentScreen(fromParcel: true,));
+                      Get.off(() => const PaymentScreen(
+                            fromParcel: true,
+                          ));
                     }
                   });
                 }
               });
-            }else{
-              if (Get.find<RideController>().tripDetails!.parcelInformation!.payer == 'sender') {
-                Get.find<RideController>().getFinalFare(jsonDecode(event.data!)['id']).then((value) {
+            } else {
+              if (Get.find<RideController>()
+                      .tripDetails!
+                      .parcelInformation!
+                      .payer ==
+                  'sender') {
+                Get.find<RideController>()
+                    .getFinalFare(jsonDecode(event.data!)['id'])
+                    .then((value) {
                   if (value.statusCode == 200) {
                     //  Get.find<ParcelController>().updateParcelState(ParcelDeliveryState.parcelComplete);
                     Get.find<MapController>().notifyMapController();
-                    Get.off(() => const PaymentScreen(fromParcel: true,));
+                    Get.off(() => const PaymentScreen(
+                          fromParcel: true,
+                        ));
                   }
                 });
               }
             }
-
-          }else{
-            Get.find<RideController>().updateRideCurrentState(RideState.ongoingRide);
+          } else {
+            Get.find<RideController>()
+                .updateRideCurrentState(RideState.ongoingRide);
             Get.to(() => const MapScreen(fromScreen: MapScreenType.splash));
           }
           //  pusherClient!.unsubscribe("private-driver-trip-started.$tripId");
         });
       }
 
+      driverTripCancelled = pusherClient!.privateChannel(
+          "private-driver-trip-cancelled.$tripId",
+          authorizationDelegate:
+              EndpointAuthorizableChannelTokenAuthorizationDelegate
+                  .forPrivateChannel(
+            authorizationEndpoint: Uri.parse(
+                'https://${Get.find<ConfigController>().config!.webSocketUrl}/broadcasting/auth'),
+            headers: {
+              "Accept": "application/json",
+              "Authorization":
+                  "Bearer ${Get.find<AuthController>().getUserToken()}",
+              "Access-Control-Allow-Origin": "*",
+              'Access-Control-Allow-Methods': "PUT, GET, POST, DELETE, OPTIONS"
+            },
+          ));
 
-      driverTripCancelled = pusherClient!.privateChannel("private-driver-trip-cancelled.$tripId", authorizationDelegate:
-      EndpointAuthorizableChannelTokenAuthorizationDelegate.forPrivateChannel(
-        authorizationEndpoint: Uri.parse('https://${Get.find<ConfigController>().config!.webSocketUrl}/broadcasting/auth'),
-        headers:  {
-          "Accept": "application/json",
-          "Authorization": "Bearer ${Get.find<AuthController>().getUserToken()}",
-          "Access-Control-Allow-Origin": "*",
-          'Access-Control-Allow-Methods':"PUT, GET, POST, DELETE, OPTIONS"
-        },
-      ));
-
-      if(driverTripCancelled.currentStatus == null){
+      if (driverTripCancelled.currentStatus == null) {
         driverTripCancelled.subscribe();
-        driverTripCancelled.bind("driver-trip-cancelled.$tripId").listen((event) async{
-          await Get.find<RideController>().getCurrentRideStatus(fromRefresh: true);
+        driverTripCancelled
+            .bind("driver-trip-cancelled.$tripId")
+            .listen((event) async {
+          await Get.find<RideController>()
+              .getCurrentRideStatus(fromRefresh: true);
           Get.find<RideController>().stopLocationRecord();
           Get.offAll(const DashboardScreen());
           //  pusherClient!.unsubscribe("private-driver-trip-cancelled.$tripId");
         });
       }
 
+      driverTripCompleted = pusherClient!.privateChannel(
+          "private-driver-trip-completed.$tripId",
+          authorizationDelegate:
+              EndpointAuthorizableChannelTokenAuthorizationDelegate
+                  .forPrivateChannel(
+            authorizationEndpoint: Uri.parse(
+                'https://${Get.find<ConfigController>().config!.webSocketUrl}/broadcasting/auth'),
+            headers: {
+              "Accept": "application/json",
+              "Authorization":
+                  "Bearer ${Get.find<AuthController>().getUserToken()}",
+              "Access-Control-Allow-Origin": "*",
+              'Access-Control-Allow-Methods': "PUT, GET, POST, DELETE, OPTIONS"
+            },
+          ));
 
-
-      driverTripCompleted = pusherClient!.privateChannel("private-driver-trip-completed.$tripId", authorizationDelegate:
-      EndpointAuthorizableChannelTokenAuthorizationDelegate.forPrivateChannel(
-        authorizationEndpoint: Uri.parse('https://${Get.find<ConfigController>().config!.webSocketUrl}/broadcasting/auth'),
-        headers:  {
-          "Accept": "application/json",
-          "Authorization": "Bearer ${Get.find<AuthController>().getUserToken()}",
-          "Access-Control-Allow-Origin": "*",
-          'Access-Control-Allow-Methods':"PUT, GET, POST, DELETE, OPTIONS"
-        },
-      ));
-
-      if(driverTripCompleted.currentStatus ==  null){
+      if (driverTripCompleted.currentStatus == null) {
         driverTripCompleted.subscribe();
-        driverTripCompleted.bind("driver-trip-completed.$tripId").listen((event) {
-          if(jsonDecode(event.data!)['type']== 'parcel'){
+        driverTripCompleted
+            .bind("driver-trip-completed.$tripId")
+            .listen((event) {
+          if (jsonDecode(event.data!)['type'] == 'parcel') {
             Get.find<RideController>().clearRideDetails();
-            if(Get.find<ConfigController>().config!.reviewStatus!) {
-              Get.off(()=> ReviewScreen(tripId: jsonDecode(event.data!)['id']));
-            }else{
+            if (Get.find<ConfigController>().config!.reviewStatus!) {
+              Get.off(
+                  () => ReviewScreen(tripId: jsonDecode(event.data!)['id']));
+            } else {
               Get.offAll(const DashboardScreen());
             }
-          }else{
-            Get.dialog(const ConfirmationTripDialog(isStartedTrip: false,), barrierDismissible: false);
-            Get.find<RideController>().getFinalFare(jsonDecode(event.data!)['id']).then((value) {
-              if(value.statusCode == 200){
-                Get.find<RideController>().updateRideCurrentState(RideState.completeRide);
+          } else {
+            Get.dialog(
+                const ConfirmationTripDialog(
+                  isStartedTrip: false,
+                ),
+                barrierDismissible: false);
+            Get.find<RideController>()
+                .getFinalFare(jsonDecode(event.data!)['id'])
+                .then((value) {
+              if (value.statusCode == 200) {
+                Get.find<RideController>()
+                    .updateRideCurrentState(RideState.completeRide);
                 Get.find<MapController>().notifyMapController();
                 Get.find<RideController>().stopLocationRecord();
-                Get.off(()=>const PaymentScreen());
+                Get.off(() => const PaymentScreen());
               }
             });
           }
@@ -228,35 +283,40 @@ class PusherHelper {
         });
       }
 
-
-
-      driverPaymentReceived = pusherClient!.privateChannel("private-driver-payment-received.$tripId", authorizationDelegate:
-      EndpointAuthorizableChannelTokenAuthorizationDelegate.forPrivateChannel(
-        authorizationEndpoint: Uri.parse('https://${Get.find<ConfigController>().config!.webSocketUrl}/broadcasting/auth'),
-        headers:  {
-          "Accept": "application/json",
-          "Authorization": "Bearer ${Get.find<AuthController>().getUserToken()}",
-          "Access-Control-Allow-Origin": "*",
-          'Access-Control-Allow-Methods':"PUT, GET, POST, DELETE, OPTIONS"
-        },
-      ));
-      if(driverPaymentReceived.currentStatus == null){
+      driverPaymentReceived = pusherClient!.privateChannel(
+          "private-driver-payment-received.$tripId",
+          authorizationDelegate:
+              EndpointAuthorizableChannelTokenAuthorizationDelegate
+                  .forPrivateChannel(
+            authorizationEndpoint: Uri.parse(
+                'https://${Get.find<ConfigController>().config!.webSocketUrl}/broadcasting/auth'),
+            headers: {
+              "Accept": "application/json",
+              "Authorization":
+                  "Bearer ${Get.find<AuthController>().getUserToken()}",
+              "Access-Control-Allow-Origin": "*",
+              'Access-Control-Allow-Methods': "PUT, GET, POST, DELETE, OPTIONS"
+            },
+          ));
+      if (driverPaymentReceived.currentStatus == null) {
         driverPaymentReceived.subscribe();
-        driverPaymentReceived.bind("driver-payment-received.$tripId").listen((event) {
-          if(Get.find<ConfigController>().config!.reviewStatus!){
-            if(jsonDecode(event.data!)['type']== 'ride_request' && Get.find<ConfigController>().config!.reviewStatus!){
-              Get.off(()=> ReviewScreen(tripId: jsonDecode(event.data!)['id']));
+        driverPaymentReceived
+            .bind("driver-payment-received.$tripId")
+            .listen((event) {
+          if (Get.find<ConfigController>().config!.reviewStatus!) {
+            if (jsonDecode(event.data!)['type'] == 'ride_request' &&
+                Get.find<ConfigController>().config!.reviewStatus!) {
+              Get.off(
+                  () => ReviewScreen(tripId: jsonDecode(event.data!)['id']));
             }
             Get.find<RideController>().tripDetails = null;
-          }else{
-            Get.offAll(()=> const DashboardScreen());
+          } else {
+            Get.offAll(() => const DashboardScreen());
             Get.find<RideController>().tripDetails = null;
           }
           // pusherClient!.unsubscribe("private-driver-payment-received.$tripId");
         });
       }
     }
-
   }
-
 }

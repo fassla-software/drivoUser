@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:ride_sharing_user_app/common_widgets/button_widget.dart';
 import 'package:ride_sharing_user_app/common_widgets/expandable_bottom_sheet.dar.dart';
@@ -19,6 +20,7 @@ import 'package:ride_sharing_user_app/features/trip/widgets/rider_details.dart';
 import 'package:ride_sharing_user_app/localization/localization_controller.dart';
 import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/util/styles.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class OtpSentBottomSheet extends StatefulWidget {
   final String firstRoute;
@@ -36,6 +38,118 @@ class OtpSentBottomSheet extends StatefulWidget {
 }
 
 class _OtpSentBottomSheetState extends State<OtpSentBottomSheet> {
+  bool _isLoadingDirections = false;
+
+  Future<void> _openGoogleMapsWithDirections() async {
+    if (_isLoadingDirections) return;
+
+    setState(() {
+      _isLoadingDirections = true;
+    });
+
+    try {
+      // Get current location
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        Get.snackbar(
+          'Location Service Disabled',
+          'Please enable location services to get directions',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          Get.snackbar(
+            'Location Permission Denied',
+            'Please grant location permission to get directions',
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        Get.snackbar(
+          'Location Permission Denied',
+          'Location permissions are permanently denied, we cannot request permissions.',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+        return;
+      }
+
+      // Get current position
+      Position currentPosition = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      // Get destination from trip details
+      final tripDetails = Get.find<RideController>().tripDetails;
+      String googleMapsUrl;
+
+      if (tripDetails?.destinationCoordinates != null &&
+          tripDetails!.destinationCoordinates!.coordinates != null &&
+          tripDetails.destinationCoordinates!.coordinates!.length >= 2) {
+        // Use coordinates if available
+        // PickupCoordinates stores coordinates as [longitude, latitude] in GeoJSON format
+        final double destinationLat =
+            tripDetails.carpoolRideLocation!.longitude!; // latitude
+        final double destinationLng =
+            tripDetails.carpoolRideLocation!.latitude!; // longitude
+
+        googleMapsUrl =
+            'https://www.google.com/maps/dir/?api=1&origin=${currentPosition.latitude},${currentPosition.longitude}&destination=$destinationLat,$destinationLng&travelmode=driving';
+      } else if (tripDetails?.destinationAddress != null &&
+          tripDetails!.destinationAddress!.isNotEmpty) {
+        // Use address if coordinates are not available
+        final String encodedAddress = Uri.encodeComponent(
+          tripDetails.destinationAddress!,
+        );
+        googleMapsUrl =
+            'https://www.google.com/maps/dir/?api=1&origin=${currentPosition.latitude},${currentPosition.longitude}&destination=$encodedAddress&travelmode=driving';
+      } else {
+        Get.snackbar(
+          'No Destination',
+          'Destination location not available',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+        return;
+      }
+
+      // Launch Google Maps
+      final Uri uri = Uri.parse(googleMapsUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        Get.snackbar(
+          'Error',
+          'Could not open Google Maps',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      print('Error opening Google Maps: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to open Google Maps: ${e.toString()}',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      setState(() {
+        _isLoadingDirections = false;
+      });
+    }
+  }
+
   int currentState = 0;
   @override
   Widget build(BuildContext context) {
@@ -55,6 +169,130 @@ class _OtpSentBottomSheetState extends State<OtpSentBottomSheet> {
                     const SizedBox(height: Dimensions.paddingSizeDefault),
                     const EstimatedFareAndDistance(),
                     const SizedBox(height: Dimensions.paddingSizeDefault),
+                    if (rideController.tripDetails?.type == 'carpool')
+                      Column(children: [
+                        Container(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: Dimensions.paddingSizeDefault,
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: Dimensions.paddingSizeDefault,
+                                    vertical: Dimensions.paddingSizeSmall,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .primaryColor
+                                        .withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(
+                                        Dimensions.radiusDefault),
+                                    border: Border.all(
+                                      color: Theme.of(context)
+                                          .primaryColor
+                                          .withOpacity(0.3),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.location_on,
+                                        color: Theme.of(context).primaryColor,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(
+                                          width: Dimensions.paddingSizeSmall),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Pickup Location',
+                                              style: textMedium.copyWith(
+                                                fontSize:
+                                                    Dimensions.fontSizeSmall,
+                                                color: Theme.of(context)
+                                                    .primaryColor,
+                                              ),
+                                            ),
+                                            Text(
+                                              rideController.tripDetails
+                                                      ?.pickupAddress ??
+                                                  'Location not available',
+                                              style: textRegular.copyWith(
+                                                fontSize: Dimensions
+                                                    .fontSizeExtraSmall,
+                                                color: Colors.grey[600],
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(
+                                  width: Dimensions.paddingSizeSmall),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).primaryColor,
+                                  borderRadius: BorderRadius.circular(
+                                      Dimensions.radiusDefault),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Theme.of(context)
+                                          .primaryColor
+                                          .withOpacity(0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: _isLoadingDirections
+                                        ? null
+                                        : _openGoogleMapsWithDirections,
+                                    borderRadius: BorderRadius.circular(
+                                        Dimensions.radiusDefault),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(
+                                          Dimensions.paddingSizeDefault),
+                                      child: _isLoadingDirections
+                                          ? SizedBox(
+                                              width: 20,
+                                              height: 20,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                        Color>(Colors.white),
+                                              ),
+                                            )
+                                          : Icon(
+                                              Icons.directions,
+                                              color: Colors.white,
+                                              size: 24,
+                                            ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(
+                          height: Dimensions.paddingSizeDefault,
+                        ),
+                      ]),
                     RouteWidget(
                         totalDistance: rideController
                                 .tripDetails?.estimatedDistance

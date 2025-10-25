@@ -1167,11 +1167,73 @@ class RideController extends GetxController implements GetxService {
   void selectCarpoolTrip(dynamic trip) async {
     carpollRouteId = trip.routeId.toString();
     isLoading = true;
+    update();
 
-    update();
-    await submitRideRequest('', false, isCarpool: true);
-    isLoading = false;
-    update();
+    // Show loading dialog
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Theme.of(Get.context!).primaryColor,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Processing your request...',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
+
+    try {
+      await submitRideRequest('', false, isCarpool: true);
+
+      // Close loading dialog
+      Get.back();
+
+      // Show success snackbar
+      Get.snackbar(
+        'Success!',
+        'Your carpool ride request has been submitted successfully!',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        icon: Icon(Icons.check_circle, color: Colors.white),
+        duration: Duration(seconds: 3),
+        snackPosition: SnackPosition.TOP,
+      );
+    } catch (e) {
+      // Close loading dialog
+      Get.back();
+
+      // Show error snackbar
+      Get.snackbar(
+        'Error',
+        'Failed to submit ride request: ${e.toString()}',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        icon: Icon(Icons.error, color: Colors.white),
+        duration: Duration(seconds: 3),
+        snackPosition: SnackPosition.TOP,
+      );
+    } finally {
+      isLoading = false;
+      update();
+    }
   }
 
   void clearCarpoolData() {
