@@ -1,0 +1,32 @@
+
+
+default_platform(:android)
+
+platform :android do
+  desc "distribute for testers"
+  lane :distributeForTesters do
+    sh "flutter clean"
+    sh "flutter build apk --release"
+    firebase_app_distribution(
+      app: "1:643071460200:android:3c7b3297898b40dab9ccdd",
+      groups: "testing",
+      firebase_cli_token: ENV["FIREBASE_CLI_TOKEN"],
+      release_notes: "Release notes",
+      apk_path: "../build/app/outputs/flutter-apk/app-release.apk",
+      android_artifact_type: "APK",
+    )
+  end
+
+  lane :distributeForDevelopers do
+    sh "flutter clean"
+    sh "flutter build apk --release"
+    firebase_app_distribution(
+      app: "1:643071460200:android:3c7b3297898b40dab9ccdd",
+      groups: "dev",
+      firebase_cli_token: ENV["FIREBASE_CLI_TOKEN"],
+      release_notes: "Release notes",
+      apk_path: "../build/app/outputs/flutter-apk/app-release.apk",
+      android_artifact_type: "APK",
+    )
+  end
+end
