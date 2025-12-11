@@ -1,0 +1,77 @@
+name: Android Fastlane with Firebase App Distribution Workflow
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  distribute_to_firebase:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout my repo code
+      uses: actions/checkout@v2
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v2
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Install Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: "3.29.3"
+        channel: stable
+    
+    - name: Get Flutter dependencies
+      run: flutter pub get
+    
+    - name: Setup Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: "3.3.0"
+        working-directory: android
+    
+    - name: Install Fastlane dependencies
+      run: |
+        bundle config set --local frozen false
+        # Install dependencies (Pluginfile is loaded via eval_gemfile in Gemfile)
+        # This should install the plugin gem from Pluginfile
+        bundle install
+        # If plugin is still not found, add it explicitly to Gemfile
+        if ! bundle list | grep -q firebase_app_distribution; then
+          echo "Plugin not found, adding to Gemfile..."
+          bundle add fastlane-plugin-firebase_app_distribution
+          bundle install
+        fi
+        bundle config set --local frozen true
+      working-directory: android
+    
+    - name: Verify plugin installation
+      run: |
+        # Verify the plugin gem is installed
+        bundle list | grep firebase_app_distribution && echo "Plugin gem is installed" || echo "Warning: Plugin gem not found in bundle list"
+      working-directory: android
+    
+    - name: Initialize Fastlane plugins
+      run: |
+        # Disable frozen mode for plugin initialization
+        bundle config set --local frozen false
+        # Ensure plugin is available by running fastlane with verbose output
+        # This will show if plugins are being loaded
+        bundle exec fastlane --version
+        # Try to list actions to see if plugin is loaded
+        bundle exec fastlane actions 2>&1 | head -20
+        # Re-enable frozen mode
+        bundle config set --local frozen true
+      working-directory: android
+        
+    - name: Build and Distribute App
+      env:
+        FIREBASE_CLI_TOKEN: ${{ secrets.FIREBASE_CLI_TOKEN }}
+      run: |
+        # Disable frozen mode for the actual run (plugins might need to update Gemfile.lock)
+        bundle config set --local frozen false
+        bundle exec fastlane android distributeForDevelopers
+      working-directory: android
