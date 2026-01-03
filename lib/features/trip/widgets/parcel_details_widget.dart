@@ -7,12 +7,14 @@ import 'package:ride_sharing_user_app/common_widgets/button_widget.dart';
 import 'package:ride_sharing_user_app/features/ride/domain/models/trip_details_model.dart';
 import 'package:ride_sharing_user_app/features/trip/widgets/parcel_item_info_widget.dart';
 import 'package:ride_sharing_user_app/features/trip/widgets/trip_route_widget.dart';
-import 'package:ride_sharing_user_app/helper/display_helper.dart';
+import 'package:ride_sharing_user_app/helper/price_converter.dart';
 import 'package:ride_sharing_user_app/util/app_constants.dart';
 import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/util/images.dart';
 import 'package:ride_sharing_user_app/util/styles.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../../../helper/display_helper.dart';
 
 class ParcelDetailsWidget extends StatelessWidget {
   final TripDetails tripDetails;
@@ -89,7 +91,8 @@ class ParcelDetailsWidget extends StatelessWidget {
                         ),
                       ]),
                       Text(
-                        '${tripDetails.actualDistance!}km',
+                        PriceConverter.formatDistance(
+                            tripDetails.actualDistance),
                         style: textRegular.copyWith(
                           color: Theme.of(context)
                               .textTheme

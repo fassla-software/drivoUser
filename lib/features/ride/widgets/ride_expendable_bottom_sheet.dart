@@ -2695,12 +2695,12 @@ void _showRouteMap(dynamic trip, BuildContext context) {
                       const SizedBox(height: 8),
                     ],
                     Text(
-                      'Walking distance to pickup: ${_calculateDistance(
+                      'Walking distance to pickup: ${PriceConverter.formatDistance(PriceConverter.calculateDistance(
                         trip.pickupMatchPoint.lat,
                         trip.pickupMatchPoint.lng,
                         trip.closestPickup?.lat ?? trip.pickupMatchPoint.lat,
                         trip.closestPickup?.lng ?? trip.pickupMatchPoint.lng,
-                      )} km',
+                      ))}',
                       style: textMedium.copyWith(
                         fontSize: Dimensions.fontSizeSmall,
                         color: Colors.grey[600],
@@ -2789,13 +2789,4 @@ void _openInGoogleMaps(double lat, double lng) async {
       colorText: Colors.white,
     );
   }
-}
-
-double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-  var p = 0.017453292519943295; // Math.PI / 180
-  var c = cos;
-  var a = 0.5 -
-      c((lat2 - lat1) * p) / 2 +
-      c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p)) / 2;
-  return 12742 * asin(sqrt(a)); // 2 * R; R = 6371 km
 }

@@ -12,6 +12,7 @@ import 'package:ride_sharing_user_app/localization/localization_controller.dart'
 import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/util/images.dart';
 import 'package:ride_sharing_user_app/util/styles.dart';
+import 'package:ride_sharing_user_app/helper/price_converter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:math' as math;
@@ -891,7 +892,8 @@ class _CarpoolPendingWidgetState extends State<_CarpoolPendingWidget>
                     ),
                     _buildInfoItem(
                       Icons.straighten,
-                      '${_formatNumber(widget.tripDetails.estimatedDistance)} km',
+                      PriceConverter.formatDistance(
+                          widget.tripDetails.estimatedDistance),
                       'Distance',
                     ),
                     _buildInfoItem(

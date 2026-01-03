@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:ride_sharing_user_app/features/payment/widget/payment_item_info_widget.dart';
+import 'package:ride_sharing_user_app/helper/price_converter.dart';
 import 'package:ride_sharing_user_app/features/ride/domain/models/trip_details_model.dart';
 import 'package:ride_sharing_user_app/features/trip/widgets/trip_route_widget.dart';
 import 'package:ride_sharing_user_app/util/dimensions.dart';
@@ -67,7 +68,7 @@ class TripDetailWidget extends StatelessWidget {
                     ),
                   ]),
                   Text(
-                    '${tripDetails.actualDistance!}km',
+                    PriceConverter.formatDistance(tripDetails.actualDistance),
                     style: textRegular.copyWith(
                       color: Theme.of(context)
                           .textTheme

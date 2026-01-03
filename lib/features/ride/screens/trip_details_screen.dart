@@ -5,6 +5,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:ride_sharing_user_app/features/ride/controllers/ride_controller.dart';
 import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/util/styles.dart';
+import 'package:ride_sharing_user_app/helper/price_converter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TripDetailsScreen extends StatefulWidget {
@@ -205,39 +206,42 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
           Row(
             children: [
               // Driver Avatar
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Theme.of(context).primaryColor.withOpacity(0.1),
-                  border: Border.all(
-                    color: Theme.of(context).primaryColor.withOpacity(0.2),
-                    width: 2,
+              Builder(builder: (context) {
+                print('Profile Image URL: ${widget.trip.driver.profileImage}');
+                return Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    border: Border.all(
+                      color: Theme.of(context).primaryColor.withOpacity(0.2),
+                      width: 2,
+                    ),
                   ),
-                ),
-                child: widget.trip.driver.profileImage != null &&
-                        widget.trip.driver.profileImage!.isNotEmpty
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(30),
-                        child: Image.network(
-                          widget.trip.driver.profileImage!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(
-                              Icons.person,
-                              size: 30,
-                              color: Theme.of(context).primaryColor,
-                            );
-                          },
+                  child: widget.trip.driver.profileImage != null &&
+                          widget.trip.driver.profileImage!.isNotEmpty
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(30),
+                          child: Image.network(
+                            widget.trip.driver.profileImage!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(
+                                Icons.person,
+                                size: 30,
+                                color: Theme.of(context).primaryColor,
+                              );
+                            },
+                          ),
+                        )
+                      : Icon(
+                          Icons.person,
+                          size: 30,
+                          color: Theme.of(context).primaryColor,
                         ),
-                      )
-                    : Icon(
-                        Icons.person,
-                        size: 30,
-                        color: Theme.of(context).primaryColor,
-                      ),
-              ),
+                );
+              }),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -555,14 +559,14 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
-                      'Walking distance to pickup: ${_calculateDistance(
+                      'Walking distance to pickup: ${PriceConverter.formatDistance(PriceConverter.calculateDistance(
                         widget.trip.pickupMatchPoint.lat,
                         widget.trip.pickupMatchPoint.lng,
                         widget.trip.closestPickup?.lat ??
                             widget.trip.pickupMatchPoint.lat,
                         widget.trip.closestPickup?.lng ??
                             widget.trip.pickupMatchPoint.lng,
-                      )} km',
+                      ))}',
                       style: textMedium.copyWith(
                         fontSize: 14,
                         color: Colors.blue[700],
@@ -786,16 +790,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
     }
   }
 
-  double _calculateDistance(
-      double lat1, double lon1, double lat2, double lon2) {
-    var p = 0.017453292519943295; // Math.PI / 180
-    var c = cos;
-    var a = 0.5 -
-        c((lat2 - lat1) * p) / 2 +
-        c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p)) / 2;
-    return 12742 * asin(sqrt(a)); // 2 * R; R = 6371 km
-  }
-
   void _showRouteMap(dynamic trip, BuildContext context) {
     showDialog(
       context: context,
@@ -981,12 +975,12 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
                         const SizedBox(height: 8),
                       ],
                       Text(
-                        'Walking distance to pickup: ${_calculateDistance(
+                        'Walking distance to pickup: ${PriceConverter.formatDistance(PriceConverter.calculateDistance(
                           trip.pickupMatchPoint.lat,
                           trip.pickupMatchPoint.lng,
                           trip.closestPickup?.lat ?? trip.pickupMatchPoint.lat,
                           trip.closestPickup?.lng ?? trip.pickupMatchPoint.lng,
-                        )} km',
+                        ))}',
                         style: textMedium.copyWith(
                           fontSize: Dimensions.fontSizeSmall,
                           color: Colors.grey[600],
