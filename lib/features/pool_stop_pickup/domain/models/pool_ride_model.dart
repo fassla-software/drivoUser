@@ -36,6 +36,41 @@ class LocationPoint {
   }
 }
 
+class RecurringInfo {
+  final String recurrenceType;
+  final List<DateTime> selectedDates;
+  final List<DateTime> availableDates;
+
+  RecurringInfo({
+    required this.recurrenceType,
+    required this.selectedDates,
+    required this.availableDates,
+  });
+
+  factory RecurringInfo.fromJson(Map<String, dynamic> json) {
+    return RecurringInfo(
+      recurrenceType: json['recurrence_type'] ?? '',
+      selectedDates: (json['selected_dates'] as List?)
+              ?.map((e) => DateTime.parse(e))
+              .toList() ??
+          [],
+      availableDates: (json['available_dates'] as List?)
+              ?.map((e) => DateTime.parse(e))
+              .toList() ??
+          [],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'recurrence_type': recurrenceType,
+      'selected_dates': selectedDates.map((e) => e.toIso8601String()).toList(),
+      'available_dates':
+          availableDates.map((e) => e.toIso8601String()).toList(),
+    };
+  }
+}
+
 class PoolRide {
   final int routeId;
   final Driver driver;
@@ -61,6 +96,8 @@ class PoolRide {
   final MatchPoint? routeEndPoint;
   final LocationPoint? closestPickup;
   final LocationPoint? closestDropoff;
+  final bool? isRecurring;
+  final RecurringInfo? recurringInfo;
 
   PoolRide({
     required this.routeId,
@@ -87,6 +124,8 @@ class PoolRide {
     this.routeEndPoint,
     this.closestPickup,
     this.closestDropoff,
+    this.isRecurring,
+    this.recurringInfo,
   });
 
   factory PoolRide.fromJson(Map<String, dynamic> json) {
@@ -125,6 +164,10 @@ class PoolRide {
         closestDropoff: json['closest_dropoff'] != null
             ? LocationPoint.fromJson(json['closest_dropoff'])
             : null,
+        isRecurring: json['is_recurring'],
+        recurringInfo: json['recurring_info'] != null
+            ? RecurringInfo.fromJson(json['recurring_info'])
+            : null,
       );
     } catch (e) {
       print('Error parsing PoolRide: $e');
@@ -159,6 +202,8 @@ class PoolRide {
       'route_end_point': routeEndPoint?.toJson(),
       'closest_pickup': closestPickup?.toJson(),
       'closest_dropoff': closestDropoff?.toJson(),
+      'is_recurring': isRecurring,
+      'recurring_info': recurringInfo?.toJson(),
     };
   }
 }

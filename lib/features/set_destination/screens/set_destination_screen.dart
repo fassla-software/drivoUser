@@ -761,7 +761,7 @@ class _SetDestinationScreenState extends State<SetDestinationScreen> {
                                         rideController
                                             .getEstimatedFare(false)
                                             .then((value) {
-                                          if (value.statusCode == 200) {
+                                          if (value?.statusCode == 200) {
                                             Get.find<LocationController>()
                                                 .initAddLocationData();
                                             Get.to(() => const MapScreen(

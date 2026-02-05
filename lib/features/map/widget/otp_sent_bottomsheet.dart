@@ -416,7 +416,7 @@ class _OtpSentBottomSheetState extends State<OtpSentBottomSheet> {
                                               TripController>()
                                           .rideCancellationCauseCurrentIndex])
                                   .then((value) {
-                                if (value.statusCode == 200) {
+                                if (value?.statusCode == 200) {
                                   Get.find<MapController>()
                                       .notifyMapController();
                                   Get.find<BottomMenuController>()

@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:get/get_connect/http/src/response/response.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_navigation/get_navigation.dart';
@@ -15,7 +14,7 @@ class SearchTripeController extends GetxController implements GetxService {
   SearchTripeController({required this.searchTripeServiceInterface});
 
   List<SearchTripeAll> searchTripeList = [];
-  ValueNotifier<bool> isLoadingSearchTripe = ValueNotifier(false);
+  bool isLoadingSearchTripe = false;
   double? startLat;
   double? startLng;
   double? endLat;
@@ -24,9 +23,8 @@ class SearchTripeController extends GetxController implements GetxService {
   String? startTime;
 
   void getAllSearchTripe() async {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      isLoadingSearchTripe.value = true;
-    });
+    isLoadingSearchTripe = true;
+    update();
 
     Response response = await searchTripeServiceInterface.searchTripe(
       // SearchTripeRequestModel(
@@ -38,7 +36,7 @@ class SearchTripeController extends GetxController implements GetxService {
       //   day: startTime!,
       // ),
       SearchTripeRequestModel(
-        pickupLat: 30.0444183,
+        pickupLat: 30.0444183, // Mock coords
         pickupLng: 31.23571,
         dropOffLat: 30.0444183,
         dropOffLng: 31.23571,
@@ -50,16 +48,13 @@ class SearchTripeController extends GetxController implements GetxService {
     if (response.statusCode == 200) {
       var data = SearchTripeResponseModel.fromJson(response.body);
       searchTripeList = data.data!.all!;
+      isLoadingSearchTripe = false;
+      update();
 
       Get.to(() => SearchTripsScreen());
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        isLoadingSearchTripe.value = false;
-      });
     } else {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        isLoadingSearchTripe.value = false;
-      });
+      isLoadingSearchTripe = false;
+      update();
     }
 
     print('responseresponseresponseresponse${searchTripeList}');

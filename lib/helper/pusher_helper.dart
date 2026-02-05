@@ -107,7 +107,7 @@ class PusherHelper {
           Get.find<RideController>()
               .getRideDetails(jsonDecode(event.data!)['id'])
               .then((value) {
-            if (value.statusCode == 200) {
+            if (value?.statusCode == 200) {
               if (jsonDecode(event.data!)['type'] == 'parcel') {
                 Get.find<ParcelController>()
                     .updateParcelState(ParcelDeliveryState.acceptRider);
@@ -165,7 +165,7 @@ class PusherHelper {
                   Get.find<RideController>()
                       .getFinalFare(jsonDecode(event.data!)['id'])
                       .then((value) {
-                    if (value.statusCode == 200) {
+                    if (value?.statusCode == 200) {
                       //  Get.find<ParcelController>().updateParcelState(ParcelDeliveryState.parcelComplete);
                       Get.find<MapController>().notifyMapController();
                       Get.off(() => const PaymentScreen(
@@ -184,7 +184,7 @@ class PusherHelper {
                 Get.find<RideController>()
                     .getFinalFare(jsonDecode(event.data!)['id'])
                     .then((value) {
-                  if (value.statusCode == 200) {
+                  if (value?.statusCode == 200) {
                     //  Get.find<ParcelController>().updateParcelState(ParcelDeliveryState.parcelComplete);
                     Get.find<MapController>().notifyMapController();
                     Get.off(() => const PaymentScreen(
@@ -270,7 +270,7 @@ class PusherHelper {
             Get.find<RideController>()
                 .getFinalFare(jsonDecode(event.data!)['id'])
                 .then((value) {
-              if (value.statusCode == 200) {
+              if (value?.statusCode == 200) {
                 Get.find<RideController>()
                     .updateRideCurrentState(RideState.completeRide);
                 Get.find<MapController>().notifyMapController();

@@ -17,15 +17,18 @@ class SearchTripeResponseModel {
     this.errors,
   });
 
-  factory SearchTripeResponseModel.fromJson(Map<String, dynamic> json) => SearchTripeResponseModel(
-    responseCode: json['response_code'],
-    message: json['message'],
-    totalSize: json['total_size'],
-    limit: json['limit'],
-    offset: json['offset'],
-    data: json['data'] != null ? SearchTripeResponseData.fromJson(json['data']) : null,
-    errors: json['errors'],
-  );
+  factory SearchTripeResponseModel.fromJson(Map<String, dynamic> json) =>
+      SearchTripeResponseModel(
+        responseCode: json['response_code'],
+        message: json['message'],
+        totalSize: json['total_size'],
+        limit: json['limit'],
+        offset: json['offset'],
+        data: json['data'] != null
+            ? SearchTripeResponseData.fromJson(json['data'])
+            : null,
+        errors: json['errors'],
+      );
 }
 
 class SearchTripeResponseData {
@@ -37,11 +40,15 @@ class SearchTripeResponseData {
     this.uncategorized,
   });
 
-  factory SearchTripeResponseData.fromJson(Map<String, dynamic> json) => SearchTripeResponseData(
-    all: (json['all'] as List?)?.map((e) => SearchTripeAll.fromJson(e)).toList(),
-    uncategorized:
-    (json['uncategorized'] as List?)?.map((e) => SearchTripeAll.fromJson(e)).toList(),
-  );
+  factory SearchTripeResponseData.fromJson(Map<String, dynamic> json) =>
+      SearchTripeResponseData(
+        all: (json['all'] as List?)
+            ?.map((e) => SearchTripeAll.fromJson(e))
+            .toList(),
+        uncategorized: (json['uncategorized'] as List?)
+            ?.map((e) => SearchTripeAll.fromJson(e))
+            .toList(),
+      );
 }
 
 class SearchTripeAll {
@@ -64,6 +71,11 @@ class SearchTripeAll {
   String? allowedGender;
   dynamic allowedAgeMin;
   int? allowedAgeMax;
+  bool? isRecurring;
+  RecurringInfo? recurringInfo;
+  String? encodedPolyline;
+  ClosestPoint? closestPickup;
+  ClosestPoint? closestDropoff;
 
   SearchTripeAll({
     this.routeId,
@@ -85,36 +97,51 @@ class SearchTripeAll {
     this.allowedGender,
     this.allowedAgeMin,
     this.allowedAgeMax,
+    this.isRecurring,
+    this.recurringInfo,
+    this.encodedPolyline,
+    this.closestPickup,
+    this.closestDropoff,
   });
 
   factory SearchTripeAll.fromJson(Map<String, dynamic> json) => SearchTripeAll(
-    routeId: json['route_id'],
-    driver:
-    json['driver'] != null ? Driver.fromJson(json['driver']) : null,
-    vehicle: json['vehicle'],
-    category: json['category'],
-    startTime: json['start_time'] != null
-        ? DateTime.parse(json['start_time'])
-        : null,
-    seatsAvailable: json['seats_available'],
-    isAc: json['is_ac'],
-    isSmokingAllowed: json['is_smoking_allowed'],
-    pickupMatchPoint: json['pickup_match_point'] != null
-        ? MatchPoint.fromJson(json['pickup_match_point'])
-        : null,
-    dropoffMatchPoint: json['dropoff_match_point'] != null
-        ? MatchPoint.fromJson(json['dropoff_match_point'])
-        : null,
-    pickupAddress: json['pickup_address'],
-    dropoffAddress: json['dropoff_address'],
-    price: json['price'],
-    hasMusic: json['has_music'],
-    hasScreenEntertainment: json['has_screen_entertainment'],
-    allowLuggage: json['allow_luggage'],
-    allowedGender: json['allowed_gender'],
-    allowedAgeMin: json['allowed_age_min'],
-    allowedAgeMax: json['allowed_age_max'],
-  );
+        routeId: json['route_id'],
+        driver: json['driver'] != null ? Driver.fromJson(json['driver']) : null,
+        vehicle: json['vehicle'],
+        category: json['category'],
+        startTime: json['start_time'] != null
+            ? DateTime.parse(json['start_time'])
+            : null,
+        seatsAvailable: json['seats_available'],
+        isAc: json['is_ac'],
+        isSmokingAllowed: json['is_smoking_allowed'],
+        pickupMatchPoint: json['pickup_match_point'] != null
+            ? MatchPoint.fromJson(json['pickup_match_point'])
+            : null,
+        dropoffMatchPoint: json['dropoff_match_point'] != null
+            ? MatchPoint.fromJson(json['dropoff_match_point'])
+            : null,
+        pickupAddress: json['pickup_address'],
+        dropoffAddress: json['dropoff_address'],
+        price: json['price'],
+        hasMusic: json['has_music'],
+        hasScreenEntertainment: json['has_screen_entertainment'],
+        allowLuggage: json['allow_luggage'],
+        allowedGender: json['allowed_gender'],
+        allowedAgeMin: json['allowed_age_min'],
+        allowedAgeMax: json['allowed_age_max'],
+        isRecurring: json['is_recurring'],
+        recurringInfo: json['recurring_info'] != null
+            ? RecurringInfo.fromJson(json['recurring_info'])
+            : null,
+        encodedPolyline: json['encoded_polyline'],
+        closestPickup: json['closest_pickup'] != null
+            ? ClosestPoint.fromJson(json['closest_pickup'])
+            : null,
+        closestDropoff: json['closest_dropoff'] != null
+            ? ClosestPoint.fromJson(json['closest_dropoff'])
+            : null,
+      );
 }
 
 class Driver {
@@ -131,11 +158,11 @@ class Driver {
   });
 
   factory Driver.fromJson(Map<String, dynamic> json) => Driver(
-    id: json['id'],
-    fullName: json['full_name'],
-    gender: json['gender'],
-    profileImage: json['profile_image'],
-  );
+        id: json['id'],
+        fullName: json['full_name'],
+        gender: json['gender'],
+        profileImage: json['profile_image'],
+      );
 }
 
 class MatchPoint {
@@ -148,7 +175,47 @@ class MatchPoint {
   });
 
   factory MatchPoint.fromJson(Map<String, dynamic> json) => MatchPoint(
-    lat: (json['lat'] as num?)?.toDouble(),
-    lng: (json['lng'] as num?)?.toDouble(),
-  );
+        lat: (json['lat'] as num?)?.toDouble(),
+        lng: (json['lng'] as num?)?.toDouble(),
+      );
+}
+
+class RecurringInfo {
+  String? recurrenceType;
+  List<DateTime>? selectedDates;
+  List<DateTime>? availableDates;
+
+  RecurringInfo({
+    this.recurrenceType,
+    this.selectedDates,
+    this.availableDates,
+  });
+
+  factory RecurringInfo.fromJson(Map<String, dynamic> json) => RecurringInfo(
+        recurrenceType: json['recurrence_type'],
+        selectedDates: (json['selected_dates'] as List?)
+            ?.map((e) => DateTime.parse(e))
+            .toList(),
+        availableDates: (json['available_dates'] as List?)
+            ?.map((e) => DateTime.parse(e))
+            .toList(),
+      );
+}
+
+class ClosestPoint {
+  double? lat;
+  double? lng;
+  String? placeName;
+
+  ClosestPoint({
+    this.lat,
+    this.lng,
+    this.placeName,
+  });
+
+  factory ClosestPoint.fromJson(Map<String, dynamic> json) => ClosestPoint(
+        lat: (json['lat'] as num?)?.toDouble(),
+        lng: (json['lng'] as num?)?.toDouble(),
+        placeName: json['place_name'],
+      );
 }

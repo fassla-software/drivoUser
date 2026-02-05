@@ -72,13 +72,14 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                 padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
                 child:
                     GetBuilder<TripController>(builder: (activityController) {
-                  return rideController.tripDetails != null
+                  final tripDetails = rideController.tripDetails;
+                  return tripDetails != null
                       ? Column(children: [
                           Expanded(
                               child: SingleChildScrollView(
                             child: Column(children: [
                               TripItemView(
-                                  tripDetails: rideController.tripDetails!,
+                                  tripDetails: tripDetails,
                                   isDetailsScreen: true),
                               const SizedBox(
                                   height: Dimensions.paddingSizeSmall),
@@ -123,7 +124,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                                                           .fontSizeSmall)),
                                               TextSpan(
                                                   text:
-                                                      ' ${DateConverter.stringToLocalDateTime(rideController.tripDetails!.returnTime!)}',
+                                                      ' ${DateConverter.stringToLocalDateTime(rideController.tripDetails?.returnTime ?? '')}',
                                                   style: textSemiBold.copyWith(
                                                       color: Theme.of(context)
                                                           .colorScheme
@@ -135,11 +136,10 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                                 const SizedBox(
                                     height: Dimensions.paddingSizeSmall)
                               ],
-                              rideController.tripDetails?.type == 'parcel'
+                              tripDetails.type == 'parcel'
                                   ? ParcelDetailsWidget(
-                                      tripDetails: rideController.tripDetails!)
-                                  : TripDetailWidget(
-                                      tripDetails: rideController.tripDetails!),
+                                      tripDetails: tripDetails)
+                                  : TripDetailWidget(tripDetails: tripDetails),
                               if (rideController.tripDetails?.currentStatus ==
                                       'returning' &&
                                   rideController.tripDetails?.type ==
@@ -227,7 +227,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                                                         .tripDetails?.id ??
                                                     '')
                                                 .then((value) {
-                                              if (value.statusCode == 200) {
+                                              if (value?.statusCode == 200) {
                                                 showDialog(
                                                     context: Get.context!,
                                                     builder: (_) {
@@ -801,7 +801,8 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
                             ]),
                           )),
                           const SizedBox(height: Dimensions.paddingSizeSmall),
-                          (Get.find<ConfigController>().config!.reviewStatus! &&
+                          ((Get.find<ConfigController>().config?.reviewStatus ??
+                                      false) &&
                                   !(rideController.tripDetails?.isReviewed ??
                                       false) &&
                                   rideController.tripDetails?.driver != null &&

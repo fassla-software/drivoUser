@@ -1098,7 +1098,7 @@ class _SetDestinationCarPoolScreenState
                                                   rideController
                                                       .getEstimatedFare(false)
                                                       .then((value) {
-                                                    if (value.statusCode ==
+                                                    if (value?.statusCode ==
                                                         200) {
                                                       Get.find<
                                                               LocationController>()

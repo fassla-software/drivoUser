@@ -350,7 +350,7 @@ class _FindingRiderWidgetState extends State<FindingRiderWidget> {
                                           '',
                                         )
                                             .then((value) {
-                                          if (value.statusCode == 200) {
+                                          if (value?.statusCode == 200) {
                                             rideController
                                                 .updateRideCurrentState(
                                               RideState.initial,
@@ -985,7 +985,7 @@ class _CarpoolPendingWidgetState extends State<_CarpoolPendingWidget>
                       '',
                     )
                         .then((value) {
-                      if (value.statusCode == 200) {
+                      if (value?.statusCode == 200) {
                         Get.find<RideController>()
                             .updateRideCurrentState(RideState.initial);
                         Get.find<MapController>().notifyMapController();

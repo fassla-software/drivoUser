@@ -40,9 +40,10 @@ class TripItemView extends StatelessWidget {
               } else if (tripDetails.currentStatus == 'ongoing') {
                 Get.find<ParcelController>()
                     .updateParcelState(ParcelDeliveryState.parcelOngoing);
-                if (value.body['data']['parcel_information']['payer'] ==
+                if (value?.statusCode == 200 &&
+                    value?.body['data']['parcel_information']['payer'] ==
                         'sender' &&
-                    value.body['data']['payment_status'] == 'unpaid') {
+                    value?.body['data']['payment_status'] == 'unpaid') {
                   Get.off(() => const PaymentScreen(fromParcel: true));
                 } else {
                   Get.to(

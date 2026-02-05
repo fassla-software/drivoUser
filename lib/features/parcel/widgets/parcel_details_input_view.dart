@@ -69,7 +69,7 @@ class _ParcelDetailInputViewState extends State<ParcelDetailInputView> with Sing
                         showCustomSnackBar('parcel_weight_is_required'.tr);
                       }else{
                         rideController.getEstimatedFare(true).then((value) {
-                          if(value.statusCode == 200) {
+                          if(value?.statusCode == 200) {
                             parcelController.updateParcelState(ParcelDeliveryState.parcelInfoDetails);
                             parcelController.updateParcelDetailsStatus();
                           }

@@ -227,7 +227,7 @@ class _TripeDetailsScreenState extends State<TripeDetailsScreen> {
                                                         .tripDetails?.id ??
                                                     '')
                                                 .then((value) {
-                                              if (value.statusCode == 200) {
+                                              if (value?.statusCode == 200) {
                                                 showDialog(
                                                     context: Get.context!,
                                                     builder: (_) {

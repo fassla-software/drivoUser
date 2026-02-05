@@ -141,7 +141,7 @@ class TripDetailWidget extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Text(
-                tripDetails.paymentMethod!.tr,
+                tripDetails.paymentMethod?.tr ?? '',
                 style: textRegular.copyWith(
                     fontSize: Dimensions.fontSizeSmall,
                     color: Theme.of(context).primaryColor),

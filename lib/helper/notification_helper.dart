@@ -22,7 +22,7 @@ import 'package:ride_sharing_user_app/features/ride/widgets/confirmation_trip_di
 import 'package:ride_sharing_user_app/features/settings/domain/html_enum_types.dart';
 import 'package:ride_sharing_user_app/features/settings/screens/policy_screen.dart';
 import 'package:ride_sharing_user_app/features/trip/screens/trip_details_screen.dart';
-import 'package:ride_sharing_user_app/features/trip/screens/tripe_details_screen.dart';
+
 import 'package:ride_sharing_user_app/features/wallet/screens/wallet_screen.dart';
 import 'package:ride_sharing_user_app/helper/display_helper.dart';
 import 'package:ride_sharing_user_app/main.dart';
@@ -88,7 +88,7 @@ class NotificationHelper {
             Get.find<RideController>()
                 .getRideDetails(message.data['ride_request_id'])
                 .then((value) {
-              if (value.statusCode == 200) {
+              if (value?.statusCode == 200) {
                 if (message.data['type'] == 'parcel') {
                   Get.find<ParcelController>()
                       .updateParcelState(ParcelDeliveryState.acceptRider);
@@ -111,7 +111,7 @@ class NotificationHelper {
             Get.find<RideController>()
                 .getRideDetails(message.data['ride_request_id'])
                 .then((value) {
-              if (value.statusCode == 200) {
+              if (value?.statusCode == 200) {
                 if (message.data['type'] == 'parcel') {
                   Get.find<ParcelController>()
                       .updateParcelState(ParcelDeliveryState.acceptRider);
@@ -158,7 +158,7 @@ class NotificationHelper {
                   Get.find<RideController>()
                       .getFinalFare(message.data['ride_request_id'])
                       .then((value) {
-                    if (value.statusCode == 200) {
+                    if (value?.statusCode == 200) {
                       Get.find<MapController>().notifyMapController();
                       Get.off(() => const PaymentScreen(
                             fromParcel: true,
@@ -176,7 +176,7 @@ class NotificationHelper {
                 Get.find<RideController>()
                     .getFinalFare(message.data['ride_request_id'])
                     .then((value) {
-                  if (value.statusCode == 200) {
+                  if (value?.statusCode == 200) {
                     Get.find<MapController>().notifyMapController();
                     Get.off(() => const PaymentScreen(
                           fromParcel: true,
@@ -202,7 +202,7 @@ class NotificationHelper {
             Get.find<RideController>()
                 .getFinalFare(message.data['ride_request_id'])
                 .then((value) {
-              if (value.statusCode == 200) {
+              if (value?.statusCode == 200) {
                 Get.find<RideController>()
                     .updateRideCurrentState(RideState.completeRide);
                 Get.find<MapController>().notifyMapController();
@@ -231,7 +231,7 @@ class NotificationHelper {
             Get.find<RideController>()
                 .getBiddingList(message.data['ride_request_id'], 1)
                 .then((value) {
-              if (value.statusCode == 200) {
+              if (value?.statusCode == 200) {
                 Get.find<RideController>().biddingList.length != 1
                     ? Get.back()
                     : null;
@@ -260,7 +260,7 @@ class NotificationHelper {
             Get.find<RideController>()
                 .getBiddingList(message.data['ride_request_id'], 1)
                 .then((value) {
-              if (value.statusCode == 200) {
+              if (value?.statusCode == 200) {
                 if (Get.find<RideController>().biddingList.isEmpty &&
                     Get.isDialogOpen!) {
                   Get.back();
@@ -284,7 +284,7 @@ class NotificationHelper {
             Get.find<RideController>()
                 .getBiddingList(message.data['ride_request_id'], 1)
                 .then((value) {
-              if (value.statusCode == 200) {
+              if (value?.statusCode == 200) {
                 Get.find<RideController>().biddingList.length != 1
                     ? Get.back()
                     : null;
@@ -316,7 +316,7 @@ class NotificationHelper {
             Get.find<RideController>()
                 .getBiddingList(message.data['ride_request_id'], 1)
                 .then((value) {
-              if (value.statusCode == 200) {
+              if (value?.statusCode == 200) {
                 /* if(Get.find<RideController>().biddingList.isEmpty && Get.isDialogOpen!){
                 Get.back();
               }*/
@@ -512,7 +512,7 @@ class NotificationHelper {
                 Get.find<RideController>()
                     .getBiddingList(data['ride_request_id'], 1)
                     .then((value) async {
-                  if (value.statusCode == 200) {
+                  if (value?.statusCode == 200) {
                     Get.dialog(
                         barrierDismissible: true,
                         barrierColor: Colors.black.withOpacity(0.5),

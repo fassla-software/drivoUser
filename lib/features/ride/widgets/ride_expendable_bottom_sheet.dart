@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:async';
 import 'dart:ui';
+import 'package:ride_sharing_user_app/features/pool_stop_pickup/domain/models/pool_ride_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';

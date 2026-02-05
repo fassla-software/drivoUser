@@ -30,7 +30,7 @@ class ParcelItem extends StatelessWidget {
               Get.find<RideController>()
                   .getRideDetails(rideRequest.id!)
                   .then((value) {
-                if (value.statusCode == 200) {
+                if (value?.statusCode == 200) {
                   parcelController.setParcelLoadingDeactive(index);
                   Get.find<ParcelController>()
                       .updateParcelState(ParcelDeliveryState.otpSent);
@@ -49,11 +49,11 @@ class ParcelItem extends StatelessWidget {
             } else {
               if (rideRequest.paymentStatus == 'paid') {
                 rideController.getFinalFare(rideRequest.id!).then((value) {
-                  if (value.statusCode == 200) {
+                  if (value?.statusCode == 200) {
                     rideController
                         .getRideDetails(rideRequest.id!)
                         .then((value) {
-                      if (value.statusCode == 200) {
+                      if (value?.statusCode == 200) {
                         Get.find<ParcelController>().updateParcelState(
                             ParcelDeliveryState.parcelOngoing);
                         Get.find<RideController>().startLocationRecord();
@@ -68,11 +68,11 @@ class ParcelItem extends StatelessWidget {
                 if (rideRequest.parcelInformation!.payer == 'sender' &&
                     rideRequest.driver != null) {
                   rideController.getFinalFare(rideRequest.id!).then((value) {
-                    if (value.statusCode == 200) {
+                    if (value?.statusCode == 200) {
                       rideController
                           .getRideDetails(rideRequest.id!)
                           .then((value) {
-                        if (value.statusCode == 200) {
+                        if (value?.statusCode == 200) {
                           Get.find<ParcelController>().updateParcelState(
                               ParcelDeliveryState.parcelOngoing);
                           Get.find<RideController>().startLocationRecord();
@@ -87,7 +87,7 @@ class ParcelItem extends StatelessWidget {
                     rideController
                         .getRideDetails(rideRequest.id!)
                         .then((value) {
-                      if (value.statusCode == 200) {
+                      if (value?.statusCode == 200) {
                         Get.find<MapController>().getPolyline();
                         Get.find<ParcelController>().updateParcelState(
                             ParcelDeliveryState.parcelOngoing);

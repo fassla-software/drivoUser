@@ -51,7 +51,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       Get.find<RideController>()
           .getRideDetails(Get.find<RideController>().currentTripDetails!.id!)
           .then((value) {
-        if (value.statusCode == 200) {
+        if (value?.statusCode == 200) {
           if (Get.find<RideController>().currentTripDetails!.type == 'parcel') {
             if (Get.find<RideController>().currentTripDetails!.currentStatus ==
                 'pending') {

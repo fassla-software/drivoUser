@@ -21,41 +21,67 @@ import 'package:ride_sharing_user_app/features/pool_stop_pickup/screens/start_tr
 import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/util/images.dart';
 import 'package:ride_sharing_user_app/util/styles.dart';
+import 'package:ride_sharing_user_app/features/home/domain/models/search_tripe_response_model.dart';
+import 'package:intl/intl.dart';
 
 class DetailsTripScreen extends StatelessWidget {
   final bool isMyTrip;
   final bool? isEndTrip;
   final Map<String, dynamic>? tripData;
+  final SearchTripeAll? tripModel;
 
   const DetailsTripScreen({
     super.key,
     required this.isMyTrip,
     this.isEndTrip,
     this.tripData,
+    this.tripModel,
   });
 
   @override
   Widget build(BuildContext context) {
     // Use tripData if provided, otherwise use default data
-    final trip = tripData ??
-        {
-          'driverName': 'أحمد محمد',
-          'driverImage': Images.userIcon,
-          'rating': 4.8,
-          'price': 45.0,
-          'currency': 'جنيه',
-          'carModel': 'تويوتا كامري 2022',
-          'carColor': 'أبيض',
-          'departureTime': '08:30 ص',
-          'arrivalTime': '09:15 ص',
-          'availableSeats': 3,
-          'totalSeats': 4,
-          'pickupLocation': 'مدينة نصر',
-          'dropoffLocation': 'وسط البلد',
-          'distance': '15 كم',
-          'duration': '45 دقيقة',
-          'isVerified': true,
-        };
+    print('isRepated:${tripModel?.isRecurring}');
+    final trip = tripModel != null
+        ? {
+            'driverName': tripModel!.driver?.fullName ?? 'Unknown',
+            'driverImage': Images.userIcon, // specific image logic if needed
+            'rating': 5.0,
+            'price': tripModel!.price ?? 0,
+            'currency': 'SAR',
+            'carModel': 'Car',
+            'carColor': 'Model',
+            'departureTime': tripModel!.startTime != null
+                ? DateFormat('hh:mm a').format(tripModel!.startTime!)
+                : '',
+            'arrivalTime': '',
+            'availableSeats': tripModel!.seatsAvailable ?? 0,
+            'totalSeats': 4,
+            'pickupLocation': tripModel!.pickupAddress ?? '',
+            'dropoffLocation': tripModel!.dropoffAddress ?? '',
+            'distance': '',
+            'duration': '',
+            'isVerified': true,
+          }
+        : tripData ??
+            {
+              'driverName': 'أحمد محمد',
+              'driverImage': Images.userIcon,
+              'rating': 4.8,
+              'price': 45.0,
+              'currency': 'جنيه',
+              'carModel': 'تويوتا كامري 2022',
+              'carColor': 'أبيض',
+              'departureTime': '08:30 ص',
+              'arrivalTime': '09:15 ص',
+              'availableSeats': 3,
+              'totalSeats': 4,
+              'pickupLocation': 'مدينة نصر',
+              'dropoffLocation': 'وسط البلد',
+              'distance': '15 كم',
+              'duration': '45 دقيقة',
+              'isVerified': true,
+            };
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -439,6 +465,62 @@ class DetailsTripScreen extends StatelessWidget {
                       ),
                     ],
                   ),
+                  if (tripModel?.isRecurring == true) ...[
+                    const SizedBox(height: Dimensions.paddingSizeDefault),
+                    const Divider(),
+                    const SizedBox(height: Dimensions.paddingSizeDefault),
+                    Text(
+                      'تكرار الرحلة',
+                      style: textBold.copyWith(
+                        fontSize: Dimensions.fontSizeLarge,
+                        color: Get.isDarkMode
+                            ? Theme.of(context).colorScheme.onPrimaryContainer
+                            : Theme.of(context).colorScheme.inverseSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      tripModel!.recurringInfo!.recurrenceType == 'repeated'
+                          ? 'رحلة متكررة'
+                          : 'رحلة لمرة واحدة',
+                      style: textMedium.copyWith(
+                        fontSize: Dimensions.fontSizeDefault,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                    if (tripModel!.recurringInfo!.availableDates != null &&
+                        tripModel!
+                            .recurringInfo!.availableDates!.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: tripModel!.recurringInfo!.availableDates!
+                            .map((date) {
+                          return Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .primaryColor
+                                  .withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                  color: Theme.of(context)
+                                      .primaryColor
+                                      .withOpacity(0.3)),
+                            ),
+                            child: Text(
+                              DateFormat('yyyy-MM-dd').format(date),
+                              style: textRegular.copyWith(
+                                fontSize: Dimensions.fontSizeSmall,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      )
+                    ]
+                  ],
                 ],
               ),
             ),

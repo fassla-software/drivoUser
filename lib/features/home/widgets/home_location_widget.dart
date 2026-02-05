@@ -1131,12 +1131,10 @@ class _HomeLocationWidgetState extends State<HomeLocationWidget> {
                                 //   ),
                                 // ),
                                 //=====================================
-                                ValueListenableBuilder(
-                                  valueListenable:
-                                      Get.find<SearchTripeController>()
-                                          .isLoadingSearchTripe,
-                                  builder: (context, isLoading, child) {
-                                    return isLoading
+                                GetBuilder<SearchTripeController>(
+                                  builder: (searchTripeController) {
+                                    return searchTripeController
+                                            .isLoadingSearchTripe
                                         ? SizedBox(
                                             height: size.height * 0.04 + 5,
                                             child: LoaderWidget())

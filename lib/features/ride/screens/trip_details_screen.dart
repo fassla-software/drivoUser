@@ -7,6 +7,8 @@ import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/util/styles.dart';
 import 'package:ride_sharing_user_app/helper/price_converter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:ride_sharing_user_app/features/home/domain/models/search_tripe_response_model.dart';
+import 'package:ride_sharing_user_app/features/pool_stop_pickup/domain/models/pool_ride_model.dart';
 
 class TripDetailsScreen extends StatefulWidget {
   final dynamic trip;
@@ -84,7 +86,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
             backgroundColor: Theme.of(context).primaryColor,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Get.back(),
+              onPressed: () => Navigator.of(context).pop(),
             ),
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
@@ -343,9 +345,81 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
           _buildInfoRow('Available Seats', '${widget.trip.seatsAvailable}'),
           _buildInfoRow('Pickup', widget.trip.pickupAddress ?? ''),
           _buildInfoRow('Destination', widget.trip.dropoffAddress ?? ''),
+          if (widget.trip.isRecurring == true) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Theme.of(context).primaryColor.withOpacity(0.2),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.repeat,
+                          size: 16, color: Theme.of(context).primaryColor),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Recurring Trip',
+                        style: textBold.copyWith(
+                          fontSize: 14,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (widget.trip.recurringInfo?.availableDates != null &&
+                      (widget.trip.recurringInfo!.availableDates! as List)
+                          .isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children:
+                          (widget.trip.recurringInfo!.availableDates! as List)
+                              .take(5)
+                              .map((date) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: Theme.of(context)
+                                  .primaryColor
+                                  .withOpacity(0.2),
+                            ),
+                          ),
+                          child: Text(
+                            // Handle date if it's String (PoolRide) or DateTime (SearchTripeAll) - but wait, Model defines it as List<DateTime> in both now!
+                            // I updated both models to have List<DateTime> for availableDates.
+                            _formatDate(date),
+                            style: textRegular.copyWith(
+                              fontSize: 12,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
   Widget _buildVehicleCard() {
@@ -524,7 +598,8 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
           const SizedBox(height: 16),
 
           // Closest Pickup
-          if (widget.trip.closestPickup != null) ...[
+          if ((widget.trip is SearchTripeAll || widget.trip is PoolRide) &&
+              widget.trip.closestPickup != null) ...[
             _buildLocationRow(
               Icons.directions_walk,
               'Your Pickup Point',
@@ -535,7 +610,8 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
           ],
 
           // Closest Dropoff
-          if (widget.trip.closestDropoff != null) ...[
+          if ((widget.trip is SearchTripeAll || widget.trip is PoolRide) &&
+              widget.trip.closestDropoff != null) ...[
             _buildLocationRow(
               Icons.directions_walk,
               'Your Dropoff Point',
@@ -781,12 +857,18 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
     );
   }
 
-  String _formatDateTime(String dateTimeString) {
+  String _formatDateTime(dynamic date) {
     try {
-      DateTime dateTime = DateTime.parse(dateTimeString);
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+      if (date is DateTime) {
+        return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+      }
+      if (date is String) {
+        DateTime dateTime = DateTime.parse(date);
+        return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
+      }
+      return date.toString();
     } catch (e) {
-      return dateTimeString;
+      return date.toString();
     }
   }
 
@@ -1104,7 +1186,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
     rideController.selectCarpoolTrip(trip);
 
     // Navigate back to the previous screen
-    Get.back();
+    Navigator.of(context).pop();
   }
 }
 

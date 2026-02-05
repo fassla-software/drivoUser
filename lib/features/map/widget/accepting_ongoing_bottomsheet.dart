@@ -327,7 +327,7 @@ class _AcceptingAndOngoingBottomSheetState
                                                   TripController>()
                                               .rideCancellationCauseCurrentIndex])
                                       .then((value) {
-                                    if (value.statusCode == 200) {
+                                    if (value?.statusCode == 200) {
                                       Get.find<MapController>()
                                           .notifyMapController();
                                       Get.find<BottomMenuController>()
@@ -348,14 +348,14 @@ class _AcceptingAndOngoingBottomSheetState
                                               .rideCancellationCauseCurrentIndex],
                                           afterAccept: true)
                                       .then((value) async {
-                                    if (value.statusCode == 200) {
+                                    if (value?.statusCode == 200) {
                                       Get.find<RideController>()
                                           .stopLocationRecord();
                                       rideController
                                           .getFinalFare(
                                               rideController.tripDetails!.id!)
                                           .then((value) {
-                                        if (value.statusCode == 200) {
+                                        if (value?.statusCode == 200) {
                                           Get.find<RideController>()
                                               .updateRideCurrentState(
                                                   RideState.completeRide);
