@@ -102,8 +102,12 @@ class RideRepository implements RideRepositoryInterface {
     double? cancellationFee,
     int? carpollRouteId,
     bool? isCarpool,
+    String? bookingType,
+    List<String>? selectedDates,
+    int? requiredSeats,
   }) async {
     return await apiClient.postData(AppConstants.rideRequest, {
+      //TODO:ksksksksksksk
       "pickup_coordinates": '[$pickupLat,$pickupLng]',
       "destination_coordinates": '[$destinationLat,$destinationLng]',
       "customer_coordinates": '[$customerCurrentLat,$customerCurrentLng]',
@@ -173,7 +177,10 @@ class RideRepository implements RideRepositoryInterface {
       'extra_fare_fee': extraFareFee,
       'zone_id': zoneId,
       "carpool_route_id": carpollRouteId,
-      "is_carpool": isCarpool
+      "is_carpool": isCarpool,
+      "booking_type": bookingType,
+      "selected_dates": selectedDates,
+      "required_seats": requiredSeats,
     });
   }
 

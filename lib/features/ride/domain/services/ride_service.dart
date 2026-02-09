@@ -143,6 +143,9 @@ class RideService implements RideServiceInterface {
     String? zoneId,
     int? carpollRouteId,
     bool? isCarpool,
+    String? bookingType,
+    List<String>? selectedDates,
+    int? requiredSeats,
   }) async {
     return await rideRepositoryInterface.submitRideRequest(
       pickupLat: pickupLat,
@@ -178,6 +181,9 @@ class RideService implements RideServiceInterface {
       zoneId: zoneId,
       isCarpool: isCarpool,
       carpollRouteId: carpollRouteId,
+      bookingType: bookingType,
+      selectedDates: selectedDates,
+      requiredSeats: requiredSeats,
     );
   }
 

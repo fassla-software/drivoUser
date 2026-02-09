@@ -301,7 +301,11 @@ class RideController extends GetxController implements GetxService {
   }
 
   Future<Response> submitRideRequest(String note, bool parcel,
-      {bool isCarpool = false, String categoryId = ''}) async {
+      {bool isCarpool = false,
+      String categoryId = '',
+      String bookingType = 'all',
+      List<DateTime>? selectedDates,
+      int? requiredSeats}) async {
     initCountingTimeStates();
     isSubmit = true;
     update();
@@ -446,6 +450,12 @@ class RideController extends GetxController implements GetxService {
       carpollRouteId: (isCarpool && carpollRouteId != null)
           ? int.tryParse(carpollRouteId!)
           : null,
+      bookingType: bookingType,
+      selectedDates: selectedDates
+          ?.map((e) =>
+              "${e.year}-${e.month.toString().padLeft(2, '0')}-${e.day.toString().padLeft(2, '0')}")
+          .toList(),
+      requiredSeats: requiredSeats,
     );
 
     if (response.statusCode == 200 && response.body['data'] != null) {
@@ -1231,7 +1241,8 @@ class RideController extends GetxController implements GetxService {
     update();
   }
 
-  void selectCarpoolTrip(dynamic trip) async {
+  void selectCarpoolTrip(dynamic trip,
+      {String bookingType = 'all', List<DateTime>? selectedDates}) async {
     carpollRouteId = trip.routeId.toString();
     isLoading = true;
     update();
@@ -1268,7 +1279,21 @@ class RideController extends GetxController implements GetxService {
     );
 
     try {
-      await submitRideRequest('', false, isCarpool: true);
+      await submitRideRequest(
+        '',
+        false,
+        isCarpool: true,
+        bookingType: bookingType,
+        selectedDates: selectedDates,
+        // Pass trip details explicitly if needed, but for now assuming tripDetails or carpoolTripDetails might be used or valid logic inside steps
+        // Actually submitRideRequest will need to access the trip object to get seatsAvailable if we want to rely on that.
+        // But selectCarpoolTrip receives 'dynamic trip'.
+        // Let's pass the seatsAvailable directly to submitRideRequest?
+        // Or updated submitRideRequest will use tripDetails.
+        // But tripDetails might not be set to THIS trip yet if we just selected it from a search list.
+        // So we might need to pass the required seats here.
+        requiredSeats: selectedSeats,
+      );
 
       // Close loading dialog
       Get.back();

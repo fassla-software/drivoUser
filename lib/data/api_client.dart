@@ -82,8 +82,8 @@ class ApiClient extends GetxService {
       {Map<String, String>? headers}) async {
     try {
       if (kDebugMode) {
-        print('====> API Call: $uri\nHeader: $_mainHeaders');
-        print('====> API Body: $body');
+        log('====> API Call: $uri\nHeader: $_mainHeaders');
+        log('====> API Body: $body');
       }
       http.Response response = await http
           .post(
@@ -176,8 +176,8 @@ class ApiClient extends GetxService {
       {Map<String, String>? headers}) async {
     try {
       if (kDebugMode) {
-        print('====> API Call: $uri\nHeader: $_mainHeaders');
-        print('====> API Body: $body');
+        log('====> API Call: $uri\nHeader: $_mainHeaders');
+        log('====> API Body: $body');
       }
       http.Response response = await http
           .put(

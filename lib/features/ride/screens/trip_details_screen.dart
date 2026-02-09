@@ -65,6 +65,9 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
     _slideController.forward();
   }
 
+  // New State Variable for selected dates
+  List<DateTime> _selectedDates = [];
+
   @override
   void dispose() {
     _fadeController.dispose();
@@ -384,25 +387,39 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
                           (widget.trip.recurringInfo!.availableDates! as List)
                               .take(5)
                               .map((date) {
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(
-                              color: Theme.of(context)
-                                  .primaryColor
-                                  .withOpacity(0.2),
+                        bool isSelected = _selectedDates.contains(date);
+                        return InkWell(
+                          onTap: () {
+                            setState(() {
+                              if (isSelected) {
+                                _selectedDates.remove(date);
+                              } else {
+                                _selectedDates.add(date);
+                              }
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? Theme.of(context).primaryColor
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: Theme.of(context)
+                                    .primaryColor
+                                    .withOpacity(0.2),
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            // Handle date if it's String (PoolRide) or DateTime (SearchTripeAll) - but wait, Model defines it as List<DateTime> in both now!
-                            // I updated both models to have List<DateTime> for availableDates.
-                            _formatDate(date),
-                            style: textRegular.copyWith(
-                              fontSize: 12,
-                              color: Theme.of(context).primaryColor,
+                            child: Text(
+                              _formatDate(date),
+                              style: textRegular.copyWith(
+                                fontSize: 12,
+                                color: isSelected
+                                    ? Colors.white
+                                    : Theme.of(context).primaryColor,
+                              ),
                             ),
                           ),
                         );
@@ -1183,7 +1200,12 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
   }
 
   void _selectTrip(dynamic trip, RideController rideController) {
-    rideController.selectCarpoolTrip(trip);
+    String bookingType = _selectedDates.isNotEmpty ? 'selected' : 'all';
+    rideController.selectCarpoolTrip(
+      trip,
+      bookingType: bookingType,
+      selectedDates: _selectedDates,
+    );
 
     // Navigate back to the previous screen
     Navigator.of(context).pop();

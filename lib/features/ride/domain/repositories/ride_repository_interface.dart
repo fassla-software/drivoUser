@@ -67,6 +67,9 @@ abstract class RideRepositoryInterface implements RepositoryInterface {
     double? cancellationFee,
     int? carpollRouteId,
     bool? isCarpool,
+    String? bookingType,
+    List<String>? selectedDates,
+    int? requiredSeats,
   });
 
   Future<dynamic> carpoolSubmitRideRequest({

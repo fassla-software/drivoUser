@@ -66,6 +66,9 @@ abstract class RideServiceInterface {
     double? cancellationFee,
     int? carpollRouteId,
     bool? isCarpool,
+    String? bookingType,
+    List<String>? selectedDates,
+    int? requiredSeats,
   });
 
   Future<dynamic> carpoolSubmitRideRequest({

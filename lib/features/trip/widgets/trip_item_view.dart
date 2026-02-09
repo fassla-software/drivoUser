@@ -26,7 +26,8 @@ class TripItemView extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        if (tripDetails.currentStatus == 'accepted' ||
+        if ((tripDetails.type == 'parcel' &&
+                tripDetails.currentStatus == 'accepted') ||
             tripDetails.currentStatus == 'ongoing' ||
             tripDetails.currentStatus == 'pending') {
           if (tripDetails.type == 'parcel') {
