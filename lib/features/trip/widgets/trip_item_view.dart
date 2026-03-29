@@ -214,8 +214,10 @@ class TripItemView extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        DateConverter.isoStringToDateTimeString(
-                            tripDetails.createdAt!),
+                        tripDetails.type == 'carpool'
+                            ? tripDetails.selectedDates?.join(', ') ?? ''
+                            : DateConverter.isoStringToDateTimeString(
+                                tripDetails.createdAt ?? ''),
                         style: textRegular.copyWith(
                           fontSize: Dimensions.fontSizeSmall,
                           color: Theme.of(context)
