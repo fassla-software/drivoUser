@@ -19,6 +19,7 @@ import 'package:ride_sharing_user_app/features/refund_request/screens/refund_req
 import 'package:ride_sharing_user_app/features/ride/controllers/ride_controller.dart';
 import 'package:ride_sharing_user_app/features/splash/controllers/config_controller.dart';
 import 'package:ride_sharing_user_app/features/trip/controllers/trip_controller.dart';
+import 'package:ride_sharing_user_app/features/trip/widgets/carpool_trip_details_card.dart';
 import 'package:ride_sharing_user_app/features/trip/widgets/customer_note_view_widget.dart';
 import 'package:ride_sharing_user_app/features/trip/widgets/parcel_details_widget.dart';
 import 'package:ride_sharing_user_app/features/trip/widgets/rider_info.dart';
@@ -34,8 +35,14 @@ import 'package:ride_sharing_user_app/util/styles.dart';
 class TripeDetailsScreen extends StatefulWidget {
   final String tripId;
   final bool fromNotification;
-  const TripeDetailsScreen(
-      {super.key, required this.tripId, this.fromNotification = false});
+  /// When true (e.g. opened from Carpool tab), shows the black trip-details card UI.
+  final bool fromCarpoolTab;
+  const TripeDetailsScreen({
+    super.key,
+    required this.tripId,
+    this.fromNotification = false,
+    this.fromCarpoolTab = false,
+  });
 
   @override
   State<TripeDetailsScreen> createState() => _TripeDetailsScreenState();
@@ -61,27 +68,35 @@ class _TripeDetailsScreenState extends State<TripeDetailsScreen> {
             },
             child: BodyWidget(
               appBar: AppBarWidget(
-                title: rideController.tripDetails?.type == 'parcel'
-                    ? 'parcel_details'.tr
-                    : 'trip_details'.tr,
-                subTitle: rideController.tripDetails?.refId,
+                title: 'trip_details'.tr,
                 showBackButton: true,
                 centerTitle: true,
+                isShowIcon: true,
               ),
               body: Padding(
                 padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
                 child:
                     GetBuilder<TripController>(builder: (activityController) {
-                  return rideController.tripDetails != null
-                      ? Column(children: [
+                  final trip = rideController.tripDetails;
+                  if (trip == null) {
+                    return const LoaderWidget();
+                  }
+                  final useCarpoolDesign = widget.fromCarpoolTab ||
+                      trip.type == 'carpool' ||
+                      (trip.isCarpool ?? false);
+                  return Column(children: [
                           Expanded(
                               child: SingleChildScrollView(
                             child: Column(children: [
-                              TripItemView(
-                                  tripDetails: rideController.tripDetails!,
-                                  isDetailsScreen: true),
-                              const SizedBox(
-                                  height: Dimensions.paddingSizeSmall),
+                              if (useCarpoolDesign)
+                                CarpoolTripDetailsCard(tripDetails: trip)
+                              else ...[
+                                TripItemView(
+                                    tripDetails: trip,
+                                    isDetailsScreen: true),
+                                const SizedBox(
+                                    height: Dimensions.paddingSizeSmall),
+                              ],
                               if (rideController.tripDetails?.currentStatus ==
                                       'returning' &&
                                   rideController.tripDetails?.returnTime !=
@@ -138,8 +153,11 @@ class _TripeDetailsScreenState extends State<TripeDetailsScreen> {
                               rideController.tripDetails?.type == 'parcel'
                                   ? ParcelDetailsWidget(
                                       tripDetails: rideController.tripDetails!)
-                                  : TripDetailWidget(
-                                      tripDetails: rideController.tripDetails!),
+                                  : useCarpoolDesign
+                                      ? const SizedBox.shrink()
+                                      : TripDetailWidget(
+                                          tripDetails:
+                                              rideController.tripDetails!),
                               if (rideController.tripDetails?.currentStatus ==
                                       'returning' &&
                                   rideController.tripDetails?.type ==
@@ -752,8 +770,9 @@ class _TripeDetailsScreenState extends State<TripeDetailsScreen> {
                               ],
                               const SizedBox(
                                   height: Dimensions.paddingSizeDefault),
-                              if (rideController.tripDetails?.driver !=
-                                  null) ...[
+                              if (!useCarpoolDesign &&
+                                  rideController.tripDetails?.driver !=
+                                      null) ...[
                                 RiderInfo(
                                     tripDetails: rideController.tripDetails!)
                               ],
@@ -815,8 +834,7 @@ class _TripeDetailsScreenState extends State<TripeDetailsScreen> {
                                       ReviewScreen(tripId: widget.tripId)),
                                 )
                               : const SizedBox()
-                        ])
-                      : const LoaderWidget();
+                        ]);
                 }),
               ),
             ),

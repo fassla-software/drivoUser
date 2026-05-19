@@ -21,7 +21,8 @@ class ParcelController extends GetxController with GetSingleTickerProviderStateM
   int selectedParcelCategory = 0;
   bool payReceiver = false;
   SuggestedVehicleCategoryModel? suggestedVehicleCategoryModel;
-  List<SuggestedCategory>? suggestedCategoryList;
+  List<SuggestedCategory>? suggestedVehicleCategoryList = [];
+
   List<ParcelCategory>? parcelCategoryList;
   bool getSuggested = false;
 
@@ -146,25 +147,49 @@ class ParcelController extends GetxController with GetSingleTickerProviderStateM
   }
 
   Future<Response> getSuggestedCategoryList() async {
-    getSuggested = true;
-    update();
-    Response response = await parcelServiceInterface.getSuggestedVehicleCategory(parcelWeightController.text);
-    if(response.statusCode == 200 ){
-      suggestedCategoryList = [];
-      isLoading = false;
-      if(response.body['data'] != null){
-        suggestedVehicleCategoryModel = SuggestedVehicleCategoryModel.fromJson(response.body);
-        suggestedCategoryList!.addAll(SuggestedVehicleCategoryModel.fromJson(response.body).data!.data!);
-      }
-    }else{
-      getSuggested = false;
-      ApiChecker.checkApi(response);
-    }
-    getSuggested = false;
-    update();
-    return response;
+  getSuggested = true;
+  update();
+
+ print('Weight: ${parcelWeightController.text}');
+
+  getSuggested = true;
+  update();
+
+  Response response =
+      await parcelServiceInterface
+          .getSuggestedVehicleCategory(
+    parcelWeightController.text,
+  );
+
+  print('Status Code: ${response.statusCode}');
+  print('Response Body: ${response.body}');
+
+  if (response.statusCode == 200) {
+
+    suggestedVehicleCategoryModel =
+        SuggestedVehicleCategoryModel.fromJson(
+      response.body,
+    );
+
+    suggestedVehicleCategoryList =
+        suggestedVehicleCategoryModel
+                ?.data
+                ?.data ??
+            [];
+
+  } else {
+
+    suggestedVehicleCategoryList = [];
+
+    ApiChecker.checkApi(response);
   }
 
+  getSuggested = false;
+
+  update();
+
+  return response;
+}
 
   ParcelListModel? parcelListModel;
   Future<Response> getOngoingParcelList() async {

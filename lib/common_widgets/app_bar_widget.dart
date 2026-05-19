@@ -41,21 +41,31 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
       this.fontWeight,
       this.height,
       this.toolbarHeight,
-      this.isShowIcon});
+      this.isShowIcon,  });
 
   @override
   Widget build(BuildContext context) {
+    final bool nudgeTitleToScreenCenter = centerTitle &&
+        showBackButton &&
+        !showTripHistoryFilter &&
+        isShowIcon == true;
+    final double titleCenterNudgeDx = nudgeTitleToScreenCenter
+        ? (Directionality.of(context) == TextDirection.rtl ? 1 : -1) *
+            (kToolbarHeight / 2)
+        : 0.0;
+
     return PreferredSize(
       preferredSize: Size.fromHeight(height ?? 150.0),
       child: AppBar(
           elevation: 0,
           scrolledUnderElevation: 0,
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          toolbarHeight: toolbarHeight ?? 20,
+          toolbarHeight: toolbarHeight ?? kToolbarHeight,
+          leadingWidth: showBackButton ? kToolbarHeight : null,
           automaticallyImplyLeading: false,
           title: isShowIcon == true
               ? Padding(
-                  padding: const EdgeInsets.only(top: 16),
+                  padding: EdgeInsets.only(top: centerTitle ? 20 : 16),
                   child: InkWell(
                     onTap: isHome
                         ? () {
@@ -76,27 +86,35 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                           }
                         : null,
                     child: Padding(
-                      padding: const EdgeInsets.only(
-                          left: Dimensions.paddingSizeExtraSmall),
-                      child: Column(
+                      padding: EdgeInsets.only(
+                        left: centerTitle
+                            ? 0
+                            : Dimensions.paddingSizeExtraSmall,
+                      ),
+                      child: Transform.translate(
+                        offset: Offset(titleCenterNudgeDx, 0),
+                        child: Column(
                         mainAxisAlignment: MainAxisAlignment.end,
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                        crossAxisAlignment: centerTitle
+                            ? CrossAxisAlignment.center
+                            : CrossAxisAlignment.end,
                         children: [
-                          Row(children: [
-                            Text(
-                              title.tr,
-                              style: textRegular.copyWith(
-                                fontSize: fontSize ?? Dimensions.fontSizeLarge,
-                                fontWeight: fontWeight,
-                                color: Get.isDarkMode
-                                    ? Colors.white.withOpacity(0.9)
-                                    : Colors.white,
+                          if (showTripHistoryFilter)
+                            Row(children: [
+                              Text(
+                                title.tr,
+                                style: textRegular.copyWith(
+                                  fontSize:
+                                      fontSize ?? Dimensions.fontSizeLarge,
+                                  fontWeight: fontWeight,
+                                  color: Get.isDarkMode
+                                      ? Colors.white.withOpacity(0.9)
+                                      : Colors.white,
+                                ),
+                                maxLines: 1,
+                                textAlign: TextAlign.start,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 1,
-                              textAlign: TextAlign.start,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            if (showTripHistoryFilter)
                               GetBuilder<TripController>(
                                   builder: (tripController) {
                                 return Expanded(
@@ -180,7 +198,49 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                                   ),
                                 );
                               }),
-                          ]),
+                            ])
+                          else if (centerTitle)
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Center(
+                                    child: Text(
+                                      title.tr,
+                                      style: textRegular.copyWith(
+                                        fontSize: fontSize ??
+                                            Dimensions.fontSizeLarge,
+                                        fontWeight: fontWeight,
+                                        color: Get.isDarkMode
+                                            ? Colors.white.withOpacity(0.9)
+                                            : Colors.white,
+                                      ),
+                                      maxLines: 1,
+                                      textAlign: TextAlign.center,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                          else
+                            Row(children: [
+                              Text(
+                                title.tr,
+                                style: textRegular.copyWith(
+                                  fontSize:
+                                      fontSize ?? Dimensions.fontSizeLarge,
+                                  fontWeight: fontWeight,
+                                  color: Get.isDarkMode
+                                      ? Colors.white.withOpacity(0.9)
+                                      : Colors.white,
+                                ),
+                                maxLines: 1,
+                                textAlign: TextAlign.start,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ]),
+                          if (subTitle != null || isHome)
+                            SizedBox(height: centerTitle ? 10 : 8),
                           subTitle != null
                               ? Text(
                                   '${'trip'.tr} #$subTitle',
@@ -194,7 +254,9 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                                         : Colors.white,
                                   ),
                                   maxLines: 1,
-                                  textAlign: TextAlign.start,
+                                  textAlign: centerTitle
+                                      ? TextAlign.center
+                                      : TextAlign.start,
                                   overflow: TextOverflow.ellipsis,
                                 )
                               : const SizedBox(),
@@ -204,45 +266,73 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
                                   return Padding(
                                     padding: const EdgeInsets.only(
                                         top: Dimensions.paddingSizeExtraSmall),
-                                    child: Row(children: [
-                                      Icon(Icons.place_outlined,
-                                          color: Get.isDarkMode
-                                              ? Colors.white.withOpacity(0.8)
-                                              : Colors.white,
-                                          size: 16),
-                                      const SizedBox(
-                                          width: Dimensions.paddingSizeSeven),
-                                      Expanded(
-                                          child: Text(
-                                        locationController
-                                                .getUserAddress()
-                                                ?.address ??
-                                            '',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: textRegular.copyWith(
-                                            color: Get.isDarkMode
-                                                ? Colors.white.withOpacity(0.8)
-                                                : Colors.white,
-                                            fontSize:
-                                                Dimensions.fontSizeExtraSmall),
-                                      )),
-                                    ]),
+                                    child: Row(
+                                        mainAxisAlignment: centerTitle
+                                            ? MainAxisAlignment.center
+                                            : MainAxisAlignment.start,
+                                        children: [
+                                          Icon(Icons.place_outlined,
+                                              color: Get.isDarkMode
+                                                  ? Colors.white
+                                                      .withOpacity(0.8)
+                                                  : Colors.white,
+                                              size: 16),
+                                          const SizedBox(
+                                              width:
+                                                  Dimensions.paddingSizeSeven),
+                                          if (centerTitle)
+                                            Flexible(
+                                              child: Text(
+                                                locationController
+                                                        .getUserAddress()
+                                                        ?.address ??
+                                                    '',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                textAlign: TextAlign.center,
+                                                style: textRegular.copyWith(
+                                                    color: Get.isDarkMode
+                                                        ? Colors.white
+                                                            .withOpacity(0.8)
+                                                        : Colors.white,
+                                                    fontSize: Dimensions
+                                                        .fontSizeExtraSmall),
+                                              ),
+                                            )
+                                          else
+                                            Expanded(
+                                                child: Text(
+                                              locationController
+                                                      .getUserAddress()
+                                                      ?.address ??
+                                                  '',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: textRegular.copyWith(
+                                                  color: Get.isDarkMode
+                                                      ? Colors.white
+                                                          .withOpacity(0.8)
+                                                      : Colors.white,
+                                                  fontSize: Dimensions
+                                                      .fontSizeExtraSmall),
+                                            )),
+                                        ]),
                                   );
                                 })
                               : const SizedBox.shrink(),
                         ],
                       ),
+                      ),
                     ),
                   ),
                 )
               : SizedBox.shrink(),
-          centerTitle: centerTitle,
+          centerTitle: false,
           excludeHeaderSemantics: true,
           titleSpacing: 0,
           leading: showBackButton
               ? Padding(
-                  padding: EdgeInsets.only(top: 10),
+                  padding: const EdgeInsets.only(top: 14),
                   child: IconButton(
                     icon: const Icon(Icons.arrow_back_ios),
                     color: Get.isDarkMode

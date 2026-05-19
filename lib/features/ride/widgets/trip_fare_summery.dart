@@ -213,6 +213,19 @@ class TripFareSummery extends StatelessWidget {
               const SizedBox(height: Dimensions.paddingSizeExtraSmall),
               if (!fromPayment)
                 GetBuilder<ParcelController>(builder: (parcelController) {
+                  final double selectedFare = (discountAmount != null &&
+                          discountAmount!.toDouble() > 0
+                      ? discountFare ?? 0
+                      : tripFare ?? 0);
+                  final double walletBalance =
+                      Get.find<ProfileController>()
+                              .profileModel
+                              ?.data
+                              ?.wallet
+                              ?.walletBalance ??
+                          0;
+                  final bool walletAvailable = walletBalance >= selectedFare;
+
                   return !parcelController.payReceiver
                       ? Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -235,72 +248,87 @@ class TripFareSummery extends StatelessWidget {
                                     )),
                               ])),
                               SizedBox(
-                                width: 120,
+                                width: 140,
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: Dimensions.paddingSizeSmall),
                                   decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(
-                                    Dimensions.paddingSizeExtraSmall,
-                                  )),
-                                  child: DropdownButton<String>(
-                                    value: paymentController.paymentTypeIndex ==
-                                            0
-                                        ? 'cash'
-                                        : paymentController.paymentTypeIndex ==
-                                                1
-                                            ? 'digital'
-                                            : 'wallet',
-                                    items: paymentController.paymentTypeList
-                                        .map((String value) {
-                                      return DropdownMenuItem<String>(
-                                        value: value,
-                                        child: Text(
-                                          value.tr,
-                                          style: textRegular.copyWith(
+                                    color: Theme.of(context).cardColor,
+                                    borderRadius: BorderRadius.circular(
+                                      Dimensions.paddingSizeExtraSmall,
+                                    ),
+                                    border: Border.all(
+                                      color: Theme.of(context)
+                                          .dividerColor
+                                          .withOpacity(0.6),
+                                    ),
+                                  ),
+                                  child: DropdownButtonHideUnderline(
+                                    child: DropdownButton<String>(
+                                      value: paymentController
+                                                  .paymentTypeIndex ==
+                                              0
+                                          ? 'cash'
+                                          : paymentController
+                                                      .paymentTypeIndex ==
+                                                  1
+                                              ? 'digital'
+                                              : 'wallet',
+                                      icon: Icon(
+                                        Icons.keyboard_arrow_down,
+                                        color: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium!
+                                            .color,
+                                      ),
+                                      dropdownColor: Theme.of(context)
+                                          .cardColor,
+                                      items: paymentController.paymentTypeList
+                                          .map((String value) {
+                                        final bool isWallet = value == 'wallet';
+                                        return DropdownMenuItem<String>(
+                                          value: value,
+                                          child: Text(
+                                            value.tr,
+                                            style: textRegular.copyWith(
                                               fontSize:
                                                   Dimensions.fontSizeDefault,
-                                              color: Get.isDarkMode
+                                              color: isWallet && !walletAvailable
                                                   ? Theme.of(context)
-                                                      .textTheme
-                                                      .bodyMedium!
-                                                      .color!
-                                                      .withOpacity(0.8)
-                                                  : null),
-                                          textAlign: TextAlign.right,
-                                        ),
-                                      );
-                                    }).toList(),
-                                    onChanged: (value) {
-                                      if (value == 'wallet' &&
-                                          (discountAmount != null &&
-                                                      discountAmount!
-                                                              .toDouble() >
-                                                          0
-                                                  ? discountFare!
-                                                  : tripFare!) >
-                                              Get.find<ProfileController>()
-                                                  .profileModel!
-                                                  .data!
-                                                  .wallet!
-                                                  .walletBalance!) {
-                                        showCustomSnackBar(
-                                            'your_wallet_has_insufficient_balance'
-                                                .tr,
-                                            isError: true,
-                                            subMessage:
-                                                '${'wallet_balance'.tr}: ${PriceConverter.convertPrice(Get.find<ProfileController>().profileModel!.data!.wallet!.walletBalance!)}');
-                                      } else {
-                                        paymentController
-                                            .setPaymentType(value == 'cash'
-                                                ? 0
-                                                : value == 'digital'
-                                                    ? 1
-                                                    : 2);
-                                      }
-                                    },
-                                    isExpanded: true,
-                                    underline: const SizedBox(),
+                                                      .hintColor
+                                                      .withOpacity(0.6)
+                                                  : Get.isDarkMode
+                                                      ? Theme.of(context)
+                                                          .textTheme
+                                                          .bodyMedium!
+                                                          .color!
+                                                          .withOpacity(0.8)
+                                                      : null,
+                                            ),
+                                            textAlign: TextAlign.right,
+                                          ),
+                                        );
+                                      }).toList(),
+                                      onChanged: (value) {
+                                        if (value == null) return;
+                                        if (value == 'wallet' && !walletAvailable) {
+                                          showCustomSnackBar(
+                                              'your_wallet_has_insufficient_balance'
+                                                  .tr,
+                                              isError: true,
+                                              subMessage:
+                                                  '${'wallet_balance'.tr}: ${PriceConverter.convertPrice(walletBalance)}');
+                                        } else {
+                                          paymentController
+                                              .setPaymentType(value == 'cash'
+                                                  ? 0
+                                                  : value == 'digital'
+                                                      ? 1
+                                                      : 2);
+                                        }
+                                      },
+                                      isExpanded: true,
+                                    ),
                                   ),
                                 ),
                               )

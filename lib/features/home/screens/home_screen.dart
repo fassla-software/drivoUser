@@ -22,6 +22,7 @@ import 'package:ride_sharing_user_app/features/location/controllers/location_con
 import 'package:ride_sharing_user_app/features/map/controllers/map_controller.dart';
 import 'package:ride_sharing_user_app/features/my_offer/controller/offer_controller.dart';
 import 'package:ride_sharing_user_app/features/parcel/controllers/parcel_controller.dart';
+import 'package:ride_sharing_user_app/features/parcel/screens/parcel_screen.dart';
 import 'package:ride_sharing_user_app/features/parcel/widgets/driver_request_dialog.dart';
 import 'package:ride_sharing_user_app/features/profile/controllers/profile_controller.dart';
 import 'package:ride_sharing_user_app/features/ride/controllers/ride_controller.dart';
@@ -293,7 +294,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () {
                   // Navigate to profile screen
                   Get.find<BottomMenuController>()
-                      .setTabIndex(3); // Profile tab
+                      .setTabIndex(4); // Profile tab
                 },
                 child: Container(
                   width: 56,
@@ -397,6 +398,76 @@ class _HomeScreenState extends State<HomeScreen> {
                                           const SizedBox(
                                               height:
                                                   Dimensions.paddingSizeLarge),
+                                                  InkWell(
+  onTap: () {
+    Get.to(() => const ParcelScreen());
+  },
+  child: Container(
+    margin: const EdgeInsets.symmetric(
+      horizontal: Dimensions.paddingSize,
+      vertical: 10,
+    ),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Theme.of(context).cardColor,
+      borderRadius: BorderRadius.circular(14),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.08),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    ),
+    child: Row(
+      children: [
+        Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: Theme.of(context).primaryColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            Icons.inventory_2_outlined,
+            color: Theme.of(context).primaryColor,
+          ),
+        ),
+
+        const SizedBox(width: 12),
+
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Parcels",
+                style: textRegular.copyWith(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "View and manage your parcels",
+                style: textRegular.copyWith(
+                  fontSize: 12,
+                  color: Theme.of(context).hintColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        Icon(
+          Icons.arrow_forward_ios,
+          size: 16,
+          color: Theme.of(context).hintColor,
+        ),
+      ],
+    ),
+  ),
+),
                                           const BannerView(),
                                           // const Padding(
                                           //   padding: EdgeInsets.only(
@@ -413,35 +484,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 height: Dimensions
                                                     .paddingSizeDefault)
                                           ],
-                                          GetBuilder<LocationController>(
-                                              builder: (locationController) {
-                                            String? zoneExtraFareReason =
-                                                _getExtraFairReason(
-                                                    config?.zoneExtraFare,
-                                                    locationController.zoneID);
-                                            return zoneExtraFareReason != null
-                                                ? Padding(
-                                                    padding: const EdgeInsets
-                                                        .only(
-                                                        bottom: Dimensions
-                                                            .paddingSizeSmall),
-                                                    child: Text(
-                                                        zoneExtraFareReason,
-                                                        style: textRegular.copyWith(
-                                                            color: Get
-                                                                    .isDarkMode
-                                                                ? Theme.of(
-                                                                        context)
-                                                                    .colorScheme
-                                                                    .onPrimaryContainer
-                                                                : Theme.of(
-                                                                        context)
-                                                                    .colorScheme
-                                                                    .inverseSurface,
-                                                            fontSize: 11)),
-                                                  )
-                                                : const SizedBox();
-                                          }),
+                                          
                                         ]),
                                       ),
                                       const SizedBox(
@@ -503,7 +546,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       right: 0,
                       child: SizedBox(
                           height: 10,
-                          child: Image.asset(Images.ongoing, scale: 2.7)),
+                          child: Image.asset(Images.peopleoutlineIcon, scale: 2.7)),
                     ),
                     Positioned(
                       bottom: 85,
@@ -670,7 +713,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text('ongoing_ride'.tr),
+                                        Text('Carpool Trip'.tr),
                                         CircleAvatar(
                                           radius: 10,
                                           backgroundColor: Theme.of(context)
@@ -774,7 +817,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text('ongoing_ride'.tr),
+                                        Text('Regular Trip'.tr),
                                         CircleAvatar(
                                           radius: 10,
                                           backgroundColor: Theme.of(context)

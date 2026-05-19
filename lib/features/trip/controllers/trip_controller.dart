@@ -10,15 +10,20 @@ class TripController extends GetxController implements GetxService {
   TripController({required this.tripServiceInterface});
 
   final List<String> _filterList = ['all_time', 'today', 'previous_day', 'custom_date'];
-  final List<String> _statusList = ['all', 'ongoing', 'cancelled', 'completed','returned'];
+  final List<String> _statusList = ['all', 'ongoing', 'cancelled', 'completed','carpool'];
   int statusIndex = 0;
   int filterIndex = 0;
   bool _showCustomDate = false;
   String _filterStartDate = '';
   String _filterEndDate = '';
   TripModel? tripModel;
+  TripModel? carpoolTripModel;
+
+  static const int carpoolTabIndex = 5;
 
   List<String> get filterList => _filterList;
+  bool get isCarpoolTab => _currentTabIndex == carpoolTabIndex;
+  int _currentTabIndex = 0;
   bool get showCustomDate => _showCustomDate;
   String get filterStartDate => _filterStartDate;
   String get filterEndDate => _filterEndDate;
@@ -48,13 +53,42 @@ class TripController extends GetxController implements GetxService {
       update();
     }
     Response response = await tripServiceInterface.getTripList('ride_request', offset, _filterStartDate, _filterEndDate, _filterList[filterIndex], _statusList[statusIndex]);
-    if (response.statusCode == 200 && response.body['date'] != []) {
+    if (response.statusCode == 200 && response.body['data'] != null) {
       if(offset == 1) {
         tripModel = TripModel.fromJson(response.body);
       }else {
         tripModel?.data!.addAll(TripModel.fromJson(response.body).data!);
         tripModel?.offset = TripModel.fromJson(response.body).offset;
         tripModel?.totalSize = TripModel.fromJson(response.body).totalSize;
+      }
+    } else {
+      ApiChecker.checkApi(response);
+    }
+    update();
+  }
+
+  Future<void> getCarpoolTripList(int offset, {bool reload = false}) async {
+    if (reload) {
+      carpoolTripModel = null;
+      update();
+    }
+    final response = await tripServiceInterface.getTripList(
+      'carpool',
+      offset,
+      _filterStartDate,
+      _filterEndDate,
+      _filterList[filterIndex],
+      'all',
+    );
+    if (response.statusCode == 200 && response.body['data'] != null) {
+      if (offset == 1) {
+        carpoolTripModel = TripModel.fromJson(response.body);
+      } else {
+        carpoolTripModel?.data
+            ?.addAll(TripModel.fromJson(response.body).data ?? []);
+        carpoolTripModel?.offset = TripModel.fromJson(response.body).offset;
+        carpoolTripModel?.totalSize =
+            TripModel.fromJson(response.body).totalSize;
       }
     } else {
       ApiChecker.checkApi(response);
@@ -71,7 +105,11 @@ class TripController extends GetxController implements GetxService {
     filterIndex = _filterList.length - 1;
     _filterStartDate = start ?? '';
     _filterEndDate = end ?? '';
-    getTripList(1);
+    if (isCarpoolTab) {
+      getCarpoolTripList(1);
+    } else {
+      getTripList(1);
+    }
     update();
   }
 
@@ -114,5 +152,7 @@ class TripController extends GetxController implements GetxService {
   void setParcelCancellationCurrentIndex(int index){
     parcelCancellationCauseCurrentIndex = index;
   }
+
+  void setTabIndex(int index) {}
 
 }

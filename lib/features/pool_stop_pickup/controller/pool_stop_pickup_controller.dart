@@ -122,10 +122,10 @@ class PoolStopPickupController extends GetxController implements GetxService {
     }
   }
 
-  Future<void> joinRide(PoolRide poolRide) async {
+  Future<String?> joinRide(PoolRide poolRide) async {
     if (pickupAddress == null || destinationAddress == null) {
       Get.snackbar('Error', 'Pickup and destination addresses are required');
-      return;
+      return null;
     }
 
     _joiningRouteIds.add(poolRide.routeId);
@@ -147,21 +147,35 @@ class PoolStopPickupController extends GetxController implements GetxService {
       bool success = await poolService.joinRide(request);
 
       if (success) {
-        Get.snackbar(
-          'Success',
-          'Join request sent successfully! The driver will be notified.',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
+        final response =
+            await Get.find<CarPollRideController>().carpoolSubmitRideRequest(
+          poolRide.routeId.toString(),
+          poolRide.price.toDouble(),
+          pickupAddress!.latitude!,
+          pickupAddress!.longitude!,
+          destinationAddress!.latitude!,
+          destinationAddress!.longitude!,
         );
 
-        await Get.find<CarPollRideController>().carpoolSubmitRideRequest(
-            poolRide.routeId.toString(),
-            poolRide.price.toDouble(),
-            pickupAddress!.latitude!,
-            pickupAddress!.longitude!,
-            destinationAddress!.latitude!,
-            destinationAddress!.longitude!);
-        // Optionally navigate to a different screen or refresh data
+        if (response.statusCode == 200 && response.body['data'] != null) {
+          final tripId = response.body['data']['id']?.toString();
+          if (tripId != null && tripId.isNotEmpty) {
+            Get.snackbar(
+              'Success',
+              'Join request sent successfully! The driver will be notified.',
+              backgroundColor: Colors.green,
+              colorText: Colors.white,
+            );
+            return tripId;
+          }
+        }
+
+        Get.snackbar(
+          'Error',
+          'Failed to create trip. Please try again.',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
       } else {
         Get.snackbar(
           'Error',
@@ -181,6 +195,7 @@ class PoolStopPickupController extends GetxController implements GetxService {
       _joiningRouteIds.remove(poolRide.routeId);
       update();
     }
+    return null;
   }
 
   void setSearchParameters({

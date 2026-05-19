@@ -335,43 +335,101 @@ class _AddNewAddressState extends State<AddNewAddress> {
                       buttonText: widget.address != null
                           ? 'update_address'.tr
                           : 'save_address'.tr,
-                      onPressed: () {
-                        String location = Get.find<LocationController>()
-                            .locationController
-                            .text;
-                        String name = nameController.text;
-                        String phone = phoneController.text;
-                        String street = roadController.text;
-                        String levelName = addressLevelController.text.trim();
+                      onPressed: () async {
 
-                        if (location.isEmpty) {
-                          showCustomSnackBar('address_is_required'.tr);
-                        } else if (name.isEmpty) {
-                          showCustomSnackBar('name_is_required'.tr);
-                        } else if (phone.isEmpty) {
-                          showCustomSnackBar('phone_is_required'.tr);
-                        } else if (addressController.selectAddressIndex == 2 &&
-                            levelName.isEmpty) {
-                          showCustomSnackBar('address_level_name_required'.tr);
-                        } else {
-                          Address address = Address(
-                            id: widget.address?.id,
-                            address: location,
-                            latitude: locationController.pickPosition.latitude,
-                            longitude:
-                                locationController.pickPosition.longitude,
-                            contactPersonName: name,
-                            contactPersonPhone: phone,
-                            street: street,
-                            addressLabel:
-                                addressController.selectAddressIndex == 2
-                                    ? levelName
-                                    : addressController.selectAddress,
-                          );
-                          addressController.addNewAddress(address,
-                              updateAddress: widget.address != null);
-                        }
-                      },
+  String location =
+      Get.find<LocationController>()
+          .locationController
+          .text;
+
+  String name = nameController.text.trim();
+
+  String phone = phoneController.text.trim();
+
+  String street = roadController.text.trim();
+
+  String levelName =
+      addressLevelController.text.trim();
+
+  if (location.isEmpty) {
+
+    showCustomSnackBar(
+      'address_is_required'.tr,
+    );
+
+  } else if (name.isEmpty) {
+
+    showCustomSnackBar(
+      'name_is_required'.tr,
+    );
+
+  } else if (phone.isEmpty) {
+
+    showCustomSnackBar(
+      'phone_is_required'.tr,
+    );
+
+  } else if (addressController
+              .selectAddressIndex == 2 &&
+          levelName.isEmpty) {
+
+    showCustomSnackBar(
+      'address_level_name_required'.tr,
+    );
+
+  } else {
+
+    /// IMPORTANT
+    if (locationController.pickPosition.latitude == 0) {
+
+      showCustomSnackBar(
+        'pick_location_from_map'.tr,
+      );
+
+      return;
+    }
+
+    Address address = Address(
+
+      id: widget.address?.id,
+
+      address: location,
+
+      latitude:
+          locationController.pickPosition.latitude,
+
+      longitude:
+          locationController.pickPosition.longitude,
+
+      contactPersonName: name,
+
+      contactPersonPhone: phone,
+
+      street: street,
+
+      addressLabel:
+          addressController.selectAddressIndex == 2
+              ? levelName
+              : addressController.selectAddress,
+    );
+
+   await addressController.addNewAddress(
+  address,
+  updateAddress: widget.address != null,
+);
+
+showCustomSnackBar(
+  widget.address != null
+      ? 'address_updated_successfully'.tr
+      : 'address_added_successfully'.tr,
+  isError: false,
+);
+
+Get.back();
+
+    
+  }
+},
                     )
                   : Center(
                       child: SpinKitCircle(

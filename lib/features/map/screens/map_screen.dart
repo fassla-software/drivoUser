@@ -197,7 +197,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   return Stack(children: [
                     Padding(
                       padding: EdgeInsets.only(
-                          bottom: mapController.sheetHeight - 20),
+                          bottom: mapController.sheetHeight - 0),
                       child: GoogleMap(
                           style: Get.isDarkMode
                               ? Get.find<ThemeController>().darkMap
@@ -259,64 +259,72 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                     ),
                     if (widget.isShowCurrentPosition)
                       Positioned(
-                        bottom: Get.height * 0.34,
-                        right: 0,
-                        child: Align(
-                          alignment: Alignment.bottomRight,
-                          child: GetBuilder<LocationController>(
-                              builder: (locationController) {
-                            return CustomIconCard(
-                              index: 5,
-                              icon: Images.currentLocation,
-                              iconColor: Theme.of(context).primaryColor,
-                              onTap: () async {
-                                await locationController.getCurrentLocation(
-                                    mapController: _mapController);
-                                await _mapController
-                                    ?.moveCamera(CameraUpdate.newCameraPosition(
-                                  CameraPosition(
-                                      target: Get.find<LocationController>()
-                                          .initialPosition,
-                                      zoom: 16),
-                                ));
-                              },
-                            );
-                          }),
-                        ),
-                      ),
-                    Positioned(
-                      bottom: Get.height * 0.41,
-                      right: 0,
-                      child: Align(
-                          alignment: Alignment.bottomRight,
-                          child: CustomIconCard(
-                            icon: mapController.isTrafficEnable
-                                ? Images.trafficOnlineIcon
-                                : Images.trafficOfflineIcon,
-                            iconColor: mapController.isTrafficEnable
-                                ? Theme.of(context)
-                                    .colorScheme
-                                    .secondaryContainer
-                                : Theme.of(context).hintColor,
-                            index: 2,
-                            onTap: () => mapController.toggleTrafficView(),
-                          )),
-                    ),
-                    Positioned(
-                        bottom: Get.height * 0.48,
-                        right: 0,
-                        child: Align(
-                            alignment: Alignment.bottomRight,
-                            child: CustomIconCard(
-                              icon: Images.offerMapIcon,
-                              iconColor:
-                                  Theme.of(context).colorScheme.inverseSurface,
-                              index: 2,
-                              onTap: () {
-                                Get.bottomSheet(
-                                  const DiscountAndCouponBottomSheet(),
-                                  backgroundColor: Theme.of(context).cardColor,
-                                  isDismissible: false,
+  bottom: mapController.sheetHeight + 20,
+  right: 16,
+  child: Align(
+    alignment: Alignment.bottomRight,
+    child: GetBuilder<LocationController>(
+      builder: (locationController) {
+        return CustomIconCard(
+          index: 5,
+          icon: Images.currentLocation,
+          iconColor: Theme.of(context).primaryColor,
+          onTap: () async {
+            await locationController.getCurrentLocation(
+              mapController: _mapController,
+            );
+
+            await _mapController?.moveCamera(
+              CameraUpdate.newCameraPosition(
+                CameraPosition(
+                  target:
+                      Get.find<LocationController>().initialPosition,
+                  zoom: 16,
+                ),
+              ),
+            );
+          },
+        );
+      },
+    ),
+  ),
+),
+
+Positioned(
+  bottom: mapController.sheetHeight + 90,
+  right: 16,
+  child: Align(
+    alignment: Alignment.bottomRight,
+    child: CustomIconCard(
+      icon: mapController.isTrafficEnable
+          ? Images.trafficOnlineIcon
+          : Images.trafficOfflineIcon,
+      iconColor: mapController.isTrafficEnable
+          ? Theme.of(context)
+              .colorScheme
+              .secondaryContainer
+          : Theme.of(context).hintColor,
+      index: 2,
+      onTap: () => mapController.toggleTrafficView(),
+    ),
+  ),
+),
+
+Positioned(
+  bottom: mapController.sheetHeight + 160,
+  right: 16,
+  child: Align(
+    alignment: Alignment.bottomRight,
+    child: CustomIconCard(
+      icon: Images.offerMapIcon,
+      iconColor:
+          Theme.of(context).colorScheme.inverseSurface,
+      index: 2,
+      onTap: () {
+        Get.bottomSheet(
+          const DiscountAndCouponBottomSheet(),
+          backgroundColor: Theme.of(context).cardColor,
+          isDismissible: false,
                                 );
                               },
                             ))),
@@ -324,7 +332,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 }),
                 persistentContentHeight: mapController.sheetHeight,
                 expandableContent:
-                    Column(mainAxisSize: MainAxisSize.min, children: [
+                    Column(mainAxisSize: MainAxisSize.max, children: [
                   widget.fromScreen == MapScreenType.parcel
                       ? GetBuilder<RideController>(builder: (parcelController) {
                           return ParcelExpendableBottomSheet(

@@ -1,92 +1,64 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:ride_sharing_user_app/common_widgets/custom_search_field.dart';
+import 'package:ride_sharing_user_app/common_widgets/divider_widget.dart';
+import 'package:ride_sharing_user_app/features/address/domain/models/address_model.dart';
 import 'package:ride_sharing_user_app/features/dashboard/screens/dashboard_screen.dart';
-import 'package:ride_sharing_user_app/features/map/screens/map_screen.dart';
+import 'package:ride_sharing_user_app/features/location/controllers/location_controller.dart';
+import 'package:ride_sharing_user_app/features/location/view/pick_map_screen.dart';
+import 'package:ride_sharing_user_app/features/map/controllers/map_controller.dart';
 import 'package:ride_sharing_user_app/features/parcel/controllers/parcel_controller.dart';
-import 'package:ride_sharing_user_app/features/set_destination/widget/input_field_for_set_route.dart';
+import 'package:ride_sharing_user_app/features/pool_stop_pickup/controller/pool_stop_pickup_controller.dart';
+import 'package:ride_sharing_user_app/features/pool_stop_pickup/screens/search_trip_drivers_screen.dart';
+import 'package:ride_sharing_user_app/features/ride/controllers/ride_controller.dart';
+import 'package:ride_sharing_user_app/features/splash/controllers/config_controller.dart';
 import 'package:ride_sharing_user_app/helper/display_helper.dart';
 import 'package:ride_sharing_user_app/helper/route_helper.dart';
 import 'package:ride_sharing_user_app/localization/localization_controller.dart';
 import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/util/images.dart';
 import 'package:ride_sharing_user_app/util/styles.dart';
-import 'package:ride_sharing_user_app/features/address/domain/models/address_model.dart';
-import 'package:ride_sharing_user_app/features/location/controllers/location_controller.dart';
-import 'package:ride_sharing_user_app/features/location/view/pick_map_screen.dart';
-import 'package:ride_sharing_user_app/features/map/controllers/map_controller.dart';
-import 'package:ride_sharing_user_app/features/ride/controllers/ride_controller.dart';
-import 'package:ride_sharing_user_app/features/splash/controllers/config_controller.dart';
-import 'package:ride_sharing_user_app/common_widgets/app_bar_widget.dart';
-import 'package:ride_sharing_user_app/common_widgets/body_widget.dart';
-import 'package:ride_sharing_user_app/common_widgets/divider_widget.dart';
 import 'dart:math' as math;
-import 'dart:async';
-import 'dart:ui';
 
 class SetDestinationCarPoolScreen extends StatefulWidget {
   final Address? address;
   final String? searchText;
-  const SetDestinationCarPoolScreen({super.key, this.address, this.searchText});
+  final bool fromDashboard;
+  final VoidCallback? onBackToWelcome;
+
+  const SetDestinationCarPoolScreen({
+    super.key,
+    this.address,
+    this.searchText,
+    this.fromDashboard = false,
+    this.onBackToWelcome,
+  });
 
   @override
   State<SetDestinationCarPoolScreen> createState() =>
       _SetDestinationCarPoolScreenState();
 }
 
-class _SetDestinationCarPoolScreenState
-    extends State<SetDestinationCarPoolScreen>
-    with SingleTickerProviderStateMixin {
-  FocusNode pickLocationFocus = FocusNode();
-  FocusNode destinationLocationFocus = FocusNode();
+class _SetDestinationCarPoolScreenState extends State<SetDestinationCarPoolScreen> {
+static const Color _pickerBlue = Color.fromARGB(255, 184, 212, 240);
+  final FocusNode _pickLocationFocus = FocusNode();
+  final FocusNode _destinationLocationFocus = FocusNode();
 
-  // Animated background state
-  late final PageController _backgroundPageController;
-  final List<String> _backgroundImages = const [
-    'assets/image/static_carpool_panner2.JPG',
-    'assets/image/static_carpool_panner3.JPG',
-    'assets/image/static_carpool_panner4.JPG',
-  ];
-  int _currentBackgroundIndex = 0;
-  Timer? _backgroundAutoSwitchTimer;
-  bool _floatFlip = false;
+  late DateTime _selectedDate;
+  late TimeOfDay _selectedTime;
+  int _selectedSeats = 5;
 
-  // Intro banner animation
-  late final AnimationController _bannerController;
-  late final Animation<Offset> _bannerSlide;
-  late final Animation<double> _bannerOpacity;
-  late final Animation<double> _bannerExpand;
-  late final Animation<Offset> _logoSlide;
-  bool _showBanner = true;
-  bool _isExpanded = false;
+  final DateFormat _displayDateFormat = DateFormat('MM/dd/yyyy');
+  final DateFormat _apiDateFormat = DateFormat('yyyy-MM-dd');
 
   @override
   void initState() {
     super.initState();
-
-    _backgroundPageController = PageController();
-
-    _bannerController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
-    _bannerSlide = Tween<Offset>(
-      begin: const Offset(0, -0.4),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _bannerController, curve: Curves.easeOutCubic),
-    );
-    _bannerOpacity = CurvedAnimation(
-      parent: _bannerController,
-      curve: Curves.easeIn,
-    );
-    _bannerExpand = Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(parent: _bannerController, curve: Curves.easeOut));
-    _logoSlide = Tween<Offset>(begin: Offset.zero, end: const Offset(0, -0.2))
-        .animate(CurvedAnimation(
-            parent: _bannerController, curve: Curves.easeInOut));
-    _bannerController.forward();
+    final now = DateTime.now();
+    _selectedDate = now;
+    _selectedTime = TimeOfDay.fromDateTime(now);
 
     Get.find<LocationController>().initAddLocationData();
     Get.find<LocationController>().initTextControllers();
@@ -95,13 +67,9 @@ class _SetDestinationCarPoolScreenState
     Get.find<RideController>().initData();
     Get.find<ParcelController>().updatePaymentPerson(false, notify: false);
 
-    // Get current location and set it as pickup after controllers are initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Get.find<LocationController>()
-          .getCurrentLocation(
-        isAnimate: false,
-        type: LocationType.from,
-      )
+          .getCurrentLocation(isAnimate: false, type: LocationType.from)
           .then((currentAddress) {
         if (currentAddress != null) {
           Get.find<LocationController>().setPickUp(currentAddress);
@@ -120,186 +88,178 @@ class _SetDestinationCarPoolScreenState
           .setDestination(Address(address: widget.searchText));
       Future.delayed(const Duration(seconds: 1)).then((_) {
         Get.find<LocationController>().searchLocation(
-            context, widget.searchText ?? '',
-            type: LocationType.to);
+          context,
+          widget.searchText ?? '',
+          type: LocationType.to,
+        );
       });
     }
-
-    // Start animated background timers
-    _backgroundAutoSwitchTimer =
-        Timer.periodic(const Duration(seconds: 5), (_) {
-      if (!mounted) return;
-      _currentBackgroundIndex =
-          (_currentBackgroundIndex + 1) % _backgroundImages.length;
-      _backgroundPageController.animateToPage(
-        _currentBackgroundIndex,
-        duration: const Duration(milliseconds: 900),
-        curve: Curves.easeInOut,
-      );
-      setState(() {
-        _floatFlip = !_floatFlip;
-      });
-    });
-
-    // Auto-expand the banner after a short showcase
-    Timer(const Duration(seconds: 7), () {
-      if (!mounted) return;
-      setState(() => _isExpanded = true);
-    });
   }
 
-  @override
-  void dispose() {
-    _backgroundAutoSwitchTimer?.cancel();
-    _backgroundPageController.dispose();
-    _bannerController.dispose();
-    super.dispose();
-  }
-
-  Widget _buildAnimatedBackground(BuildContext context) {
-    return Positioned.fill(
-      child: Stack(children: [
-        // Sliding image carousel
-        PageView.builder(
-          controller: _backgroundPageController,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _backgroundImages.length,
-          itemBuilder: (context, index) {
-            return AnimatedScale(
-              scale: _currentBackgroundIndex == index ? 1.02 : 1.0,
-              duration: const Duration(milliseconds: 900),
-              curve: Curves.easeInOut,
-              child: Image.asset(
-                _backgroundImages[index],
-                fit: BoxFit.cover,
-              ),
-            );
-          },
-        ),
-        // Gradient scrim for readability
-        Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.black.withOpacity(0.20),
-                Colors.black.withOpacity(0.45),
-              ],
-            ),
+  ThemeData _pickerTheme(BuildContext context) {
+    return Theme.of(context).copyWith(
+      colorScheme: Theme.of(context).colorScheme.copyWith(
+            primary: const Color.fromARGB(255, 84, 161, 239),
+            onPrimary: Colors.white,
           ),
-        ),
-        // Floating glow orbs
-      ]),
+      datePickerTheme: DatePickerThemeData(
+        headerBackgroundColor: _pickerBlue,
+        headerForegroundColor: Colors.white,
+        todayForegroundColor: WidgetStateProperty.all(_pickerBlue),
+        dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return Colors.white;
+          }
+          return Colors.black;
+        }),
+        dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return _pickerBlue;
+          }
+          return null;
+        }),
+      ),
+      timePickerTheme: TimePickerThemeData(
+        dialHandColor: const Color.fromARGB(255, 0, 0, 0),
+        dialBackgroundColor: _pickerBlue.withOpacity(0.12),
+        hourMinuteColor: _pickerBlue.withOpacity(0.15),
+        hourMinuteTextColor: const Color.fromARGB(255, 0, 0, 0),
+        dayPeriodColor: const Color.fromARGB(255, 173, 202, 232).withOpacity(0.15),
+        dayPeriodTextColor: const Color.fromARGB(255, 0, 0, 0),
+        entryModeIconColor: const Color.fromARGB(255, 0, 0, 0),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: const Color.fromARGB(255, 0, 0, 0)),
+      ),
     );
   }
 
-  // Animated gradient text widget for banner (defined after this class)
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: _pickerTheme(context),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() => _selectedDate = picked);
+    }
+  }
 
-  Widget _buildIntroBanner() {
-    if (!_showBanner) return const SizedBox.shrink();
-    return Positioned(
-      top: 0,
-      left: 0,
-      right: 0,
-      child: SafeArea(
-        child: Stack(
-          children: [
-            // Expanded banner background
-            if (_isExpanded)
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 1500),
-                curve: Curves.easeOut,
-                height: 80,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.white.withOpacity(0.85),
-                      Colors.white.withOpacity(0.75),
-                    ],
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
+      builder: (context, child) {
+        return Theme(
+          data: _pickerTheme(context),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() => _selectedTime = picked);
+    }
+  }
+
+  bool _isMaintenanceMode() {
+    final maintenance = Get.find<ConfigController>().config?.maintenanceMode;
+    return maintenance != null &&
+        maintenance.maintenanceStatus == 1 &&
+        maintenance.selectedMaintenanceSystem?.userApp == 1;
+  }
+
+  Future<void> _searchForRides() async {
+    final locationController = Get.find<LocationController>();
+
+    if (_isMaintenanceMode()) {
+      showCustomSnackBar('maintenance_mode_on_for_ride'.tr, isError: true);
+      return;
+    }
+
+    if (locationController.fromAddress == null ||
+        locationController.fromAddress!.address == null ||
+        locationController.fromAddress!.address!.isEmpty ||
+        locationController.pickupLocationController.text.isEmpty) {
+      showCustomSnackBar('pickup_location_is_required'.tr);
+      _pickLocationFocus.requestFocus();
+      return;
+    }
+
+    if (locationController.toAddress == null ||
+        locationController.toAddress!.address == null ||
+        locationController.toAddress!.address!.isEmpty ||
+        locationController.destinationLocationController.text.isEmpty) {
+      showCustomSnackBar('destination_location_is_required'.tr);
+      _destinationLocationFocus.requestFocus();
+      return;
+    }
+
+    final poolController = Get.find<PoolStopPickupController>();
+    poolController.setPickupAddress(locationController.fromAddress!);
+    poolController.setDestinationAddress(locationController.toAddress!);
+    poolController.setSearchParameters(
+      seats: _selectedSeats,
+      date: _apiDateFormat.format(_selectedDate),
+    );
+
+    await poolController.searchAvailableTrips();
+    if (!mounted) return;
+    Get.to(() => const SearchTripDriversScreen());
+  }
+
+  void _openMapPicker(LocationType type, LocationController locationController) {
+    if (Get.find<RideController>().rideDetails != null) {
+      showCustomSnackBar('your_ride_is_ongoing_complete'.tr, isError: true);
+      return;
+    }
+    RouteHelper.goPageAndHideTextField(
+      context,
+      PickMapScreen(
+        type: type,
+        oldLocationExist: locationController.pickPosition.latitude > 0,
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(kToolbarHeight),
+      child: AppBar(
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: Colors.white,
+        centerTitle: true,
+        automaticallyImplyLeading: false,
+        leading: widget.onBackToWelcome != null
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                onPressed: widget.onBackToWelcome,
+              )
+            : widget.fromDashboard
+                ? null
+                : IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.black),
+                    onPressed: () {
+                      if (Navigator.canPop(context)) {
+                        Get.back();
+                      } else {
+                        Get.offAll(() => const DashboardScreen());
+                      }
+                    },
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    )
-                  ],
-                ),
-              ),
-            // Logo at top when expanded
-            if (_isExpanded)
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 800),
-                curve: Curves.easeOut,
-                top: 20,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 800),
-                    curve: Curves.easeOut,
-                    height: 40,
-                    child: Image.asset(
-                      'assets/image/logo_name_black.png',
-                      color: Theme.of(context).primaryColor,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
-              ),
-            // Original compact banner
-            if (!_isExpanded)
-              FadeTransition(
-                opacity: _bannerOpacity,
-                child: SlideTransition(
-                  position: _bannerSlide,
-                  child: Center(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.90),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 16,
-                                offset: const Offset(0, 6),
-                              )
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Image.asset(
-                                'assets/image/logo_name_black.png',
-                                height: 26,
-                                color: Theme.of(context).primaryColor,
-                                fit: BoxFit.contain,
-                              ),
-                              const SizedBox(width: 12),
-                              _AnimatedGradientText(
-                                text: 'Welcome to Carpool',
-                                style: textMedium.copyWith(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
+        title: Text(
+          'One Trip',
+          style: textBold.copyWith(
+            fontSize: 18,
+            color: Colors.black,
+          ),
         ),
       ),
     );
@@ -308,985 +268,565 @@ class _SetDestinationCarPoolScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: BodyWidget(
-      appBar: AppBarWidget(
-        title: 'select_location'.tr,
-        onBackPressed: () {
-          if (Navigator.canPop(context)) {
-            Get.back();
-          } else {
-            Get.offAll(() => const DashboardScreen());
-          }
-        },
-      ),
-      body: GetBuilder<LocationController>(builder: (locationController) {
-        return GetBuilder<RideController>(builder: (rideController) {
-          return Stack(clipBehavior: Clip.none, children: [
-            _buildAnimatedBackground(context),
-            _buildIntroBanner(),
-            Positioned(
-                top: MediaQuery.of(context).size.height * 0.15,
-                left: 0,
-                right: 0,
-                child: SingleChildScrollView(
-                    child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      Dimensions.paddingSizeDefault,
-                      Dimensions.paddingSizeDefault,
-                      Dimensions.paddingSizeDefault,
-                      Dimensions.paddingSizeSmall,
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius:
-                            BorderRadius.circular(Dimensions.paddingSizeSmall),
-                      ),
-                      child: ClipRRect(
-                        borderRadius:
-                            BorderRadius.circular(Dimensions.paddingSizeSmall),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.35),
-                              borderRadius: BorderRadius.circular(
-                                  Dimensions.paddingSizeSmall),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.12),
-                              ),
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Colors.white.withOpacity(0.08),
-                                  Colors.white.withOpacity(0.02),
-                                ],
+      backgroundColor: Colors.white,
+      appBar: _buildAppBar(),
+      body: GetBuilder<LocationController>(
+        builder: (locationController) {
+          return GetBuilder<RideController>(
+            builder: (rideController) {
+              return GetBuilder<PoolStopPickupController>(
+                builder: (poolController) {
+                  return Stack(
+                    children: [
+                      SingleChildScrollView(
+                        padding: EdgeInsets.fromLTRB(
+                          Dimensions.paddingSizeDefault,
+                          0,
+                          Dimensions.paddingSizeDefault,
+                          widget.fromDashboard ? 90 : Dimensions.paddingSizeDefault,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const _ShareJourneyBanner(),
+                            const SizedBox(height: Dimensions.paddingSizeDefault),
+                            Text(
+                              'Where do you want to go?',
+                              style: textBold.copyWith(
+                                fontSize: Dimensions.fontSizeLarge,
+                                color: Colors.black,
                               ),
                             ),
-                            child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Padding(
-                                          padding: const EdgeInsets.fromLTRB(
-                                            Dimensions.paddingSizeSmall,
-                                            Dimensions.paddingSizeLarge,
-                                            Dimensions.paddingSizeSmall,
-                                            0,
-                                          ),
-                                          child: Column(children: [
-                                            SizedBox(
-                                              width: Dimensions.iconSizeLarge,
-                                              child: Image.asset(
-                                                Images.currentLocation,
-                                                color: Theme.of(context)
-                                                    .buttonTheme
-                                                    .colorScheme!
-                                                    .secondary,
-                                              ),
-                                            ),
-                                            SizedBox(
-                                                height: 70,
-                                                width: 10,
-                                                child: CustomDivider(
-                                                  height: 5,
-                                                  dashWidth: .75,
-                                                  axis: Axis.vertical,
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .onSecondary,
-                                                )),
-                                            SizedBox(
-                                              width: Dimensions.iconSizeMedium,
-                                              child: Transform(
-                                                alignment: Alignment.center,
-                                                transform: Get.find<
-                                                            LocalizationController>()
-                                                        .isLtr
-                                                    ? Matrix4.rotationY(0)
-                                                    : Matrix4.rotationY(
-                                                        math.pi),
-                                                child: Image.asset(
-                                                  Images.activityDirection,
-                                                  color: Theme.of(context)
-                                                      .buttonTheme
-                                                      .colorScheme!
-                                                      .secondary,
-                                                ),
-                                              ),
-                                            ),
-                                          ]),
-                                        ),
-                                        Expanded(
-                                            child: Padding(
-                                          padding: const EdgeInsets.all(
-                                              Dimensions.paddingSizeDefault),
-                                          child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Container(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                      horizontal: Dimensions
-                                                          .paddingSizeSmall),
-                                                  decoration: BoxDecoration(
-                                                    color: Get.isDarkMode
-                                                        ? Theme.of(context)
-                                                            .cardColor
-                                                        : Theme.of(context)
-                                                            .primaryColorDark
-                                                            .withOpacity(.25),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            Dimensions
-                                                                .radiusSmall),
-                                                  ),
-                                                  child: Row(children: [
-                                                    const SizedBox(
-                                                        width: Dimensions
-                                                            .paddingSizeExtraSmall),
-                                                    Expanded(
-                                                        child:
-                                                            CustomSearchField(
-                                                                isReadOnly:
-                                                                    rideController.rideDetails ==
-                                                                            null
-                                                                        ? false
-                                                                        : true,
-                                                                focusNode:
-                                                                    pickLocationFocus,
-                                                                controller:
-                                                                    locationController
-                                                                        .pickupLocationController,
-                                                                hint:
-                                                                    'pick_location'
-                                                                        .tr,
-                                                                onChanged:
-                                                                    (value) async {
-                                                                  return await Get
-                                                                          .find<
-                                                                              LocationController>()
-                                                                      .searchLocation(
-                                                                    context,
-                                                                    value,
-                                                                    type: LocationType
-                                                                        .from,
-                                                                  );
-                                                                },
-                                                                onTap: () {
-                                                                  if (rideController
-                                                                          .rideDetails !=
-                                                                      null) {
-                                                                    showCustomSnackBar(
-                                                                        'your_ride_is_ongoing_complete'
-                                                                            .tr,
-                                                                        isError:
-                                                                            true);
-                                                                  }
-                                                                })),
-                                                    const SizedBox(
-                                                        width: Dimensions
-                                                            .paddingSizeSmall),
-                                                    InkWell(
-                                                      onTap: () {
-                                                        if (rideController
-                                                                .rideDetails !=
-                                                            null) {
-                                                          showCustomSnackBar(
-                                                              'your_ride_is_ongoing_complete'
-                                                                  .tr,
-                                                              isError: true);
-                                                        } else {
-                                                          RouteHelper
-                                                              .goPageAndHideTextField(
-                                                                  context,
-                                                                  PickMapScreen(
-                                                                    type: LocationType
-                                                                        .from,
-                                                                    oldLocationExist:
-                                                                        locationController.pickPosition.latitude >
-                                                                                0
-                                                                            ? true
-                                                                            : false,
-                                                                  ));
-                                                        }
-                                                      },
-                                                      child: Icon(
-                                                          Icons.place_outlined,
-                                                          color: Colors.white
-                                                              .withOpacity(
-                                                                  0.7)),
-                                                    ),
-                                                  ]),
-                                                ),
-                                                Padding(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                    vertical: Dimensions
-                                                        .paddingSizeExtraSmall,
-                                                  ),
-                                                  child: Text(
-                                                    'to'.tr,
-                                                    style: textRegular.copyWith(
-                                                        color: Colors.white),
-                                                  ),
-                                                ),
-                                                if (locationController
-                                                    .extraOneRoute)
-                                                  Container(
-                                                    height: 50,
-                                                    padding: const EdgeInsets
-                                                        .symmetric(
-                                                        horizontal: Dimensions
-                                                            .paddingSizeSmall),
-                                                    decoration: BoxDecoration(
-                                                      color: Get.isDarkMode
-                                                          ? Theme.of(context)
-                                                              .cardColor
-                                                          : Theme.of(context)
-                                                              .primaryColorDark
-                                                              .withOpacity(.25),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              Dimensions
-                                                                  .radiusSmall),
-                                                    ),
-                                                    child: Row(children: [
-                                                      const SizedBox(
-                                                          width: Dimensions
-                                                              .paddingSizeExtraSmall),
-                                                      Expanded(
-                                                          child:
-                                                              CustomSearchField(
-                                                                  isReadOnly:
-                                                                      rideController.rideDetails ==
-                                                                              null
-                                                                          ? false
-                                                                          : true,
-                                                                  controller:
-                                                                      locationController
-                                                                          .extraRouteOneController,
-                                                                  hint:
-                                                                      'extra_route_one'
-                                                                          .tr,
-                                                                  onChanged:
-                                                                      (value) async {
-                                                                    return await Get.find<
-                                                                            LocationController>()
-                                                                        .searchLocation(
-                                                                      context,
-                                                                      value,
-                                                                      type: LocationType
-                                                                          .extraOne,
-                                                                    );
-                                                                  },
-                                                                  onTap: () {
-                                                                    if (rideController
-                                                                            .rideDetails !=
-                                                                        null) {
-                                                                      showCustomSnackBar(
-                                                                          'your_ride_is_ongoing_complete'
-                                                                              .tr,
-                                                                          isError:
-                                                                              true);
-                                                                    }
-                                                                  })),
-                                                      const SizedBox(
-                                                          width: Dimensions
-                                                              .paddingSizeSmall),
-                                                      InkWell(
-                                                        onTap: () {
-                                                          if (rideController
-                                                                  .rideDetails !=
-                                                              null) {
-                                                            showCustomSnackBar(
-                                                                'your_ride_is_ongoing_complete'
-                                                                    .tr,
-                                                                isError: true);
-                                                          } else {
-                                                            RouteHelper
-                                                                .goPageAndHideTextField(
-                                                                    context,
-                                                                    PickMapScreen(
-                                                                      type: LocationType
-                                                                          .extraOne,
-                                                                      oldLocationExist: locationController.pickPosition.latitude >
-                                                                              0
-                                                                          ? true
-                                                                          : false,
-                                                                    ));
-                                                          }
-                                                        },
-                                                        child: Icon(
-                                                          Icons.place_outlined,
-                                                          color: Colors.white
-                                                              .withOpacity(0.7),
-                                                        ),
-                                                      ),
-                                                      InkWell(
-                                                        onTap: () =>
-                                                            locationController
-                                                                .setExtraRoute(
-                                                                    remove:
-                                                                        true),
-                                                        child: Icon(Icons.clear,
-                                                            color: Colors.white
-                                                                .withOpacity(
-                                                                    0.7)),
-                                                      ),
-                                                    ]),
-                                                  ),
-                                                SizedBox(
-                                                  height: locationController
-                                                          .extraOneRoute
-                                                      ? Dimensions
-                                                          .paddingSizeDefault
-                                                      : 0,
-                                                ),
-                                                locationController.extraTwoRoute
-                                                    ? Container(
-                                                        height: 50,
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .symmetric(
-                                                          horizontal: Dimensions
-                                                              .paddingSizeSmall,
-                                                        ),
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          color: Get.isDarkMode
-                                                              ? Theme.of(
-                                                                      context)
-                                                                  .cardColor
-                                                              : Theme.of(
-                                                                      context)
-                                                                  .primaryColorDark
-                                                                  .withOpacity(
-                                                                      .25),
-                                                          borderRadius: BorderRadius
-                                                              .circular(Dimensions
-                                                                  .radiusSmall),
-                                                        ),
-                                                        child: Row(children: [
-                                                          const SizedBox(
-                                                              width: Dimensions
-                                                                  .paddingSizeExtraSmall),
-                                                          Expanded(
-                                                              child:
-                                                                  CustomSearchField(
-                                                                      isReadOnly: rideController.rideDetails ==
-                                                                              null
-                                                                          ? false
-                                                                          : true,
-                                                                      controller:
-                                                                          locationController
-                                                                              .extraRouteTwoController,
-                                                                      hint: 'extra_route_two'
-                                                                          .tr,
-                                                                      onChanged:
-                                                                          (value) async {
-                                                                        return await Get.find<LocationController>()
-                                                                            .searchLocation(
-                                                                          context,
-                                                                          value,
-                                                                          type:
-                                                                              LocationType.extraTwo,
-                                                                        );
-                                                                      },
-                                                                      onTap:
-                                                                          () {
-                                                                        if (rideController.rideDetails !=
-                                                                            null) {
-                                                                          showCustomSnackBar(
-                                                                              'your_ride_is_ongoing_complete'.tr,
-                                                                              isError: true);
-                                                                        }
-                                                                      })),
-                                                          const SizedBox(
-                                                              width: Dimensions
-                                                                  .paddingSizeSmall),
-                                                          InkWell(
-                                                            onTap: () {
-                                                              if (rideController
-                                                                      .rideDetails !=
-                                                                  null) {
-                                                                showCustomSnackBar(
-                                                                    'your_ride_is_ongoing_complete'
-                                                                        .tr,
-                                                                    isError:
-                                                                        true);
-                                                              } else {
-                                                                RouteHelper
-                                                                    .goPageAndHideTextField(
-                                                                        context,
-                                                                        PickMapScreen(
-                                                                          type:
-                                                                              LocationType.extraTwo,
-                                                                          oldLocationExist: locationController.pickPosition.latitude > 0
-                                                                              ? true
-                                                                              : false,
-                                                                        ));
-                                                              }
-                                                            },
-                                                            child: Icon(
-                                                                Icons
-                                                                    .place_outlined,
-                                                                color: Colors
-                                                                    .white
-                                                                    .withOpacity(
-                                                                        0.7)),
-                                                          ),
-                                                          InkWell(
-                                                            onTap: () =>
-                                                                locationController
-                                                                    .setExtraRoute(
-                                                                        remove:
-                                                                            true),
-                                                            child: Icon(
-                                                                Icons.clear,
-                                                                color: Colors
-                                                                    .white
-                                                                    .withOpacity(
-                                                                        0.7)),
-                                                          ),
-                                                        ]),
-                                                      )
-                                                    : const SizedBox(),
-                                                SizedBox(
-                                                    height: locationController
-                                                            .extraTwoRoute
-                                                        ? Dimensions
-                                                            .paddingSizeDefault
-                                                        : 0),
-                                                Row(children: [
-                                                  Expanded(
-                                                    child: Container(
-                                                      height: 50,
-                                                      padding: const EdgeInsets
-                                                          .symmetric(
-                                                          horizontal: Dimensions
-                                                              .paddingSizeSmall),
-                                                      decoration: BoxDecoration(
-                                                        color: Get.isDarkMode
-                                                            ? Theme.of(context)
-                                                                .cardColor
-                                                            : Theme.of(context)
-                                                                .primaryColorDark
-                                                                .withOpacity(
-                                                                    .25),
-                                                        borderRadius: BorderRadius
-                                                            .circular(Dimensions
-                                                                .radiusSmall),
-                                                      ),
-                                                      child: Row(children: [
-                                                        const SizedBox(
-                                                            width: Dimensions
-                                                                .paddingSizeExtraSmall),
-                                                        Expanded(
-                                                            child:
-                                                                CustomSearchField(
-                                                                    isReadOnly: rideController.rideDetails ==
-                                                                            null
-                                                                        ? false
-                                                                        : true,
-                                                                    focusNode:
-                                                                        destinationLocationFocus,
-                                                                    controller:
-                                                                        locationController
-                                                                            .destinationLocationController,
-                                                                    hint:
-                                                                        'destination'
-                                                                            .tr,
-                                                                    onChanged:
-                                                                        (value) async {
-                                                                      return await Get.find<LocationController>().searchLocation(
-                                                                          context,
-                                                                          value
-                                                                              .trim(),
-                                                                          type:
-                                                                              LocationType.to);
-                                                                    },
-                                                                    onTap: () {
-                                                                      if (rideController
-                                                                              .rideDetails !=
-                                                                          null) {
-                                                                        showCustomSnackBar(
-                                                                            'your_ride_is_ongoing_complete'
-                                                                                .tr,
-                                                                            isError:
-                                                                                true);
-                                                                      }
-                                                                    })),
-                                                        const SizedBox(
-                                                            width: Dimensions
-                                                                .paddingSizeSmall),
-                                                        locationController
-                                                                .selecting
-                                                            ? SpinKitCircle(
-                                                                color: Theme.of(
-                                                                        context)
-                                                                    .cardColor,
-                                                                size: 40.0)
-                                                            : InkWell(
-                                                                onTap: () {
-                                                                  if (rideController
-                                                                          .rideDetails !=
-                                                                      null) {
-                                                                    showCustomSnackBar(
-                                                                        'your_ride_is_ongoing_complete'
-                                                                            .tr,
-                                                                        isError:
-                                                                            true);
-                                                                  } else {
-                                                                    RouteHelper
-                                                                        .goPageAndHideTextField(
-                                                                      context,
-                                                                      PickMapScreen(
-                                                                        type: LocationType
-                                                                            .to,
-                                                                        oldLocationExist: locationController.pickPosition.latitude >
-                                                                                0
-                                                                            ? true
-                                                                            : false,
-                                                                      ),
-                                                                    );
-                                                                  }
-                                                                },
-                                                                child: Icon(
-                                                                    Icons
-                                                                        .place_outlined,
-                                                                    color: Colors
-                                                                        .white
-                                                                        .withOpacity(
-                                                                            0.7)),
-                                                              ),
-                                                      ]),
-                                                    ),
-                                                  ),
-                                                  SizedBox(
-                                                    width: locationController
-                                                            .extraTwoRoute
-                                                        ? 0
-                                                        : Dimensions
-                                                            .paddingSizeSmall,
-                                                  ),
-                                                  (!Get.find<ConfigController>()
-                                                              .config!
-                                                              .addIntermediatePoint! ||
-                                                          locationController
-                                                              .extraTwoRoute)
-                                                      ? const SizedBox()
-                                                      : InkWell(
-                                                          onTap: () =>
-                                                              locationController
-                                                                  .setExtraRoute(),
-                                                          child: Container(
-                                                            height: 40,
-                                                            width: 40,
-                                                            decoration:
-                                                                BoxDecoration(
-                                                              color: Get
-                                                                      .isDarkMode
-                                                                  ? Theme.of(
-                                                                          context)
-                                                                      .cardColor
-                                                                  : Theme.of(
-                                                                          context)
-                                                                      .primaryColorDark
-                                                                      .withOpacity(
-                                                                          .35),
-                                                              borderRadius:
-                                                                  BorderRadius.circular(
-                                                                      Dimensions
-                                                                          .paddingSizeExtraSmall),
-                                                            ),
-                                                            child: const Icon(
-                                                                Icons.add,
-                                                                color: Colors
-                                                                    .white),
-                                                          ),
-                                                        ),
-                                                ]),
-                                                const SizedBox(
-                                                    height: Dimensions
-                                                        .paddingSizeDefault),
-                                                locationController.addEntrance
-                                                    ? SizedBox(
-                                                        width: 200,
-                                                        child: InputField(
-                                                          showSuffix: false,
-                                                          controller:
-                                                              locationController
-                                                                  .entranceController,
-                                                          node:
-                                                              locationController
-                                                                  .entranceNode,
-                                                          hint: 'enter_entrance'
-                                                              .tr,
-                                                        ))
-                                                    : InkWell(
-                                                        onTap: () =>
-                                                            locationController
-                                                                .setAddEntrance(),
-                                                        child: Row(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .end,
-                                                            children: [
-                                                              SizedBox(
-                                                                  height: 25,
-                                                                  child:
-                                                                      Transform(
-                                                                    alignment:
-                                                                        Alignment
-                                                                            .center,
-                                                                    transform: Get.find<LocalizationController>()
-                                                                            .isLtr
-                                                                        ? Matrix4
-                                                                            .rotationY(
-                                                                                0)
-                                                                        : Matrix4.rotationY(
-                                                                            math.pi),
-                                                                    child: Image.asset(
-                                                                        Images
-                                                                            .curvedArrow,
-                                                                        color: Theme.of(context)
-                                                                            .buttonTheme
-                                                                            .colorScheme!
-                                                                            .secondary),
-                                                                  )),
-                                                              const SizedBox(
-                                                                  width: Dimensions
-                                                                      .paddingSizeSmall),
-                                                              Row(
-                                                                  crossAxisAlignment:
-                                                                      CrossAxisAlignment
-                                                                          .end,
-                                                                  children: [
-                                                                    const Icon(
-                                                                        Icons
-                                                                            .add,
-                                                                        color: Colors
-                                                                            .white),
-                                                                    Padding(
-                                                                      padding: const EdgeInsets
-                                                                          .only(
-                                                                          top: Dimensions
-                                                                              .paddingSizeDefault),
-                                                                      child:
-                                                                          Text(
-                                                                        'add_entrance'
-                                                                            .tr,
-                                                                        style: textMedium
-                                                                            .copyWith(
-                                                                          color: Colors
-                                                                              .white
-                                                                              .withOpacity(.75),
-                                                                          fontSize:
-                                                                              Dimensions.fontSizeLarge,
-                                                                        ),
-                                                                      ),
-                                                                    ),
-                                                                  ]),
-                                                            ]),
-                                                      ),
-                                              ]),
-                                        )),
-                                      ]),
-                                  Padding(
-                                    padding: const EdgeInsets.fromLTRB(
-                                      Dimensions.paddingSizeExtraLarge,
-                                      Dimensions.paddingSizeSmall,
-                                      Dimensions.paddingSizeExtraLarge,
-                                      Dimensions.paddingSizeExtraLarge,
-                                    ),
-                                    child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            'you_can_add_multiple_route_to'.tr,
-                                            style: textRegular.copyWith(
-                                              fontSize:
-                                                  Dimensions.fontSizeSmall,
-                                              color:
-                                                  Colors.white.withOpacity(.75),
-                                            ),
-                                          ),
-                                          InkWell(
-                                            onTap: () {
-                                              if (Get.find<ConfigController>()
-                                                          .config!
-                                                          .maintenanceMode !=
-                                                      null &&
-                                                  Get.find<ConfigController>()
-                                                          .config!
-                                                          .maintenanceMode!
-                                                          .maintenanceStatus ==
-                                                      1 &&
-                                                  Get.find<ConfigController>()
-                                                          .config!
-                                                          .maintenanceMode!
-                                                          .selectedMaintenanceSystem!
-                                                          .userApp ==
-                                                      1) {
-                                                showCustomSnackBar(
-                                                    'maintenance_mode_on_for_ride'
-                                                        .tr,
-                                                    isError: true);
-                                              } else {
-                                                if (locationController
-                                                            .fromAddress ==
-                                                        null ||
-                                                    locationController
-                                                            .fromAddress!
-                                                            .address ==
-                                                        null ||
-                                                    locationController
-                                                        .fromAddress!
-                                                        .address!
-                                                        .isEmpty) {
-                                                  showCustomSnackBar(
-                                                      'pickup_location_is_required'
-                                                          .tr);
-                                                  FocusScope.of(context)
-                                                      .requestFocus(
-                                                          pickLocationFocus);
-                                                } else if (locationController
-                                                    .pickupLocationController
-                                                    .text
-                                                    .isEmpty) {
-                                                  showCustomSnackBar(
-                                                      'pickup_location_is_required'
-                                                          .tr);
-                                                  FocusScope.of(context)
-                                                      .requestFocus(
-                                                          pickLocationFocus);
-                                                } else if (locationController
-                                                            .toAddress ==
-                                                        null ||
-                                                    locationController
-                                                            .toAddress!
-                                                            .address ==
-                                                        null ||
-                                                    locationController
-                                                        .toAddress!
-                                                        .address!
-                                                        .isEmpty) {
-                                                  showCustomSnackBar(
-                                                      'destination_location_is_required'
-                                                          .tr);
-                                                  FocusScope.of(context)
-                                                      .requestFocus(
-                                                          destinationLocationFocus);
-                                                } else if (locationController
-                                                    .destinationLocationController
-                                                    .text
-                                                    .isEmpty) {
-                                                  showCustomSnackBar(
-                                                      'destination_location_is_required'
-                                                          .tr);
-                                                  FocusScope.of(context)
-                                                      .requestFocus(
-                                                          destinationLocationFocus);
-                                                } else {
-                                                  rideController
-                                                      .getEstimatedFare(false)
-                                                      .then((value) {
-                                                    if (value?.statusCode ==
-                                                        200) {
-                                                      Get.find<
-                                                              LocationController>()
-                                                          .initAddLocationData();
-                                                      Get.to(
-                                                        () => const MapScreen(
-                                                          fromScreen:
-                                                              MapScreenType
-                                                                  .carpool,
-                                                          isShowCurrentPosition:
-                                                              false,
-                                                        ),
-                                                      );
-                                                      Get.find<RideController>()
-                                                          .updateRideCurrentState(
-                                                        RideState.initial,
-                                                      );
-                                                    }
-                                                  });
-                                                }
-                                              }
-                                            },
-                                            child: rideController.loading
-                                                ? SpinKitCircle(
-                                                    color: Theme.of(context)
-                                                        .cardColor,
-                                                    size: 40.0)
-                                                : Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                      Dimensions
-                                                          .paddingSizeDefault,
-                                                    ),
-                                                    child: Text(
-                                                      'done'.tr,
-                                                      style:
-                                                          textRegular.copyWith(
-                                                        fontSize: Dimensions
-                                                            .fontSizeExtraLarge,
-                                                        color: Theme.of(context)
-                                                            .buttonTheme
-                                                            .colorScheme!
-                                                            .secondary,
-                                                      ),
-                                                    ),
-                                                  ),
-                                          ),
-                                        ]),
+                            const SizedBox(height: Dimensions.paddingSizeSmall),
+                            _LocationCard(
+                              rideController: rideController,
+                              locationController: locationController,
+                              pickFocus: _pickLocationFocus,
+                              destinationFocus: _destinationLocationFocus,
+                              onOpenMap: _openMapPicker,
+                            ),
+                            const SizedBox(height: Dimensions.paddingSizeDefault),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _TripFieldTile(
+                                    icon: Icons.calendar_today_outlined,
+                                    label: 'Date',
+                                    value: _displayDateFormat.format(_selectedDate),
+                                    onTap: _pickDate,
                                   ),
-                                ]),
+                                ),
+                                const SizedBox(width: Dimensions.paddingSizeDefault),
+                                Expanded(
+                                  child: _TripFieldTile(
+                                    icon: Icons.access_time,
+                                    label: 'Departure',
+                                    value: _selectedTime.format(context),
+                                    onTap: _pickTime,
+                                  ),
+                                ),
+
+                                Expanded(
+                                  child: _TripFieldTile(
+                                    icon: Icons.access_time,
+                                    label: 'Return Time```````',
+                                    value: _selectedTime.format(context),
+                                    onTap: _pickTime,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: Dimensions.paddingSizeDefault),
+                            _SeatsDropdown(
+                              value: _selectedSeats,
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() => _selectedSeats = value);
+                                }
+                              },
+                            ),
+                            const SizedBox(height: Dimensions.paddingSizeLarge),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 52,
+                              child: ElevatedButton(
+                                onPressed: poolController.isSearchingTrips
+                                    ? null
+                                    : _searchForRides,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.black,
+                                  disabledBackgroundColor: Colors.black54,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: poolController.isSearchingTrips
+                                    ? const SpinKitThreeBounce(
+                                        color: Colors.white,
+                                        size: 22,
+                                      )
+                                    : Text(
+                                        'Search for Rides',
+                                        style: textBold.copyWith(
+                                          color: Colors.white,
+                                          fontSize: Dimensions.fontSizeLarge,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (locationController.resultShow)
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          child: InkWell(
+                            onTap: () => locationController
+                                .setSearchResultShowHide(show: false),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).cardColor,
+                                borderRadius: BorderRadius.circular(
+                                  Dimensions.paddingSizeDefault,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.08),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              margin: EdgeInsets.fromLTRB(
+                                24,
+                                locationController.topPosition,
+                                24,
+                                0,
+                              ),
+                              child: ListView.builder(
+                                itemCount:
+                                    locationController.predictionList.length,
+                                shrinkWrap: true,
+                                padding: EdgeInsets.zero,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemBuilder: (context, index) {
+                                  return InkWell(
+                                    onTap: () {
+                                      Get.find<LocationController>().setLocation(
+                                        fromSearch: true,
+                                        locationController
+                                            .predictionList[index].placeId!,
+                                        locationController.predictionList[index]
+                                            .description!,
+                                        null,
+                                        type: locationController.locationType,
+                                      );
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: Dimensions.paddingSizeDefault,
+                                        horizontal: Dimensions.paddingSizeSmall,
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.location_on),
+                                          Expanded(
+                                            child: Text(
+                                              locationController
+                                                  .predictionList[index]
+                                                  .description!,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: textRegular.copyWith(
+                                                fontSize:
+                                                    Dimensions.fontSizeDefault,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                  ),
-                ]))),
-            locationController.resultShow
-                ? Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: InkWell(
-                      onTap: () => locationController.setSearchResultShowHide(
-                          show: false),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Get.isDarkMode
-                              ? Theme.of(context).canvasColor
-                              : Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(
-                              Dimensions.paddingSizeDefault),
-                        ),
-                        margin: EdgeInsets.fromLTRB(
-                            30, locationController.topPosition, 30, 0),
-                        child: ListView.builder(
-                          itemCount: locationController.predictionList.length,
-                          shrinkWrap: true,
-                          padding: EdgeInsets.zero,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemBuilder: (context, index) {
-                            return InkWell(
-                              onTap: () {
-                                Get.find<LocationController>().setLocation(
-                                  fromSearch: true,
-                                  locationController
-                                      .predictionList[index].placeId!,
-                                  locationController
-                                      .predictionList[index].description!,
-                                  null,
-                                  type: locationController.locationType,
-                                );
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: Dimensions.paddingSizeDefault,
-                                  horizontal: Dimensions.paddingSizeSmall,
-                                ),
-                                child: Row(children: [
-                                  const Icon(Icons.location_on),
-                                  Expanded(
-                                      child: Text(
-                                    locationController
-                                        .predictionList[index].description!,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .displayMedium!
-                                        .copyWith(
-                                          color: Theme.of(context)
-                                              .textTheme
-                                              .bodyLarge!
-                                              .color,
-                                          fontSize: Dimensions.fontSizeDefault,
-                                        ),
-                                  )),
-                                ]),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  )
-                : const SizedBox(),
-          ]);
-        });
-      }),
-    ));
+                    ],
+                  );
+                },
+              );
+            },
+          );
+        },
+      ),
+    );
   }
 }
 
-class _AnimatedGradientText extends StatefulWidget {
-  final String text;
-  final TextStyle style;
-  const _AnimatedGradientText({required this.text, required this.style});
-
-  @override
-  State<_AnimatedGradientText> createState() => _AnimatedGradientTextState();
-}
-
-class _AnimatedGradientTextState extends State<_AnimatedGradientText>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+class _ShareJourneyBanner extends StatelessWidget {
+  const _ShareJourneyBanner();
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, _) {
-        final colors = [
-          Colors.blueAccent,
-          Colors.cyan,
-          Colors.indigoAccent,
-        ];
-        final stops = [
-          0.0,
-          (_controller.value * 0.6) + 0.2,
-          1.0,
-        ];
-        return ShaderMask(
-          shaderCallback: (bounds) {
-            return LinearGradient(
-              colors: colors,
-              stops: stops,
-            ).createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height));
-          },
-          child: Text(
-            widget.text,
-            style: widget.style.copyWith(color: Colors.white),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: const BoxDecoration(
+              color: Color(0xFFB8D4F0),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.stars_rounded, color: Colors.white, size: 30),
           ),
-        );
-      },
+          const SizedBox(width: Dimensions.paddingSizeDefault),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Share your journey',
+                  style: textBold.copyWith(
+                    color: Colors.white,
+                    fontSize: Dimensions.fontSizeLarge,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Find drivers going your way',
+                  style: textRegular.copyWith(
+                    color: Colors.white.withOpacity(0.85),
+                    fontSize: Dimensions.fontSizeSmall,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF3A3A3A),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Ride smart with more seats open to your route',
+                    style: textRegular.copyWith(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 10,
+                      height: 1.3,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LocationCard extends StatelessWidget {
+  final RideController rideController;
+  final LocationController locationController;
+  final FocusNode pickFocus;
+  final FocusNode destinationFocus;
+  final void Function(LocationType type, LocationController controller) onOpenMap;
+
+  const _LocationCard({
+    required this.rideController,
+    required this.locationController,
+    required this.pickFocus,
+    required this.destinationFocus,
+    required this.onOpenMap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isRideLocked = rideController.rideDetails != null;
+
+    return Container(
+      padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.black.withOpacity(0.12)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 28),
+            child: Column(
+              children: [
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: const BoxDecoration(
+                    color: Colors.black,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                SizedBox(
+                  height: 58,
+                  width: 10,
+                  child: CustomDivider(
+                    height: 5,
+                    dashWidth: 0.75,
+                    axis: Axis.vertical,
+                    color: Colors.black.withOpacity(0.35),
+                  ),
+                ),
+                Transform(
+                  alignment: Alignment.center,
+                  transform: Get.find<LocalizationController>().isLtr
+                      ? Matrix4.rotationY(0)
+                      : Matrix4.rotationY(math.pi),
+                  child: Image.asset(
+                    Images.activityDirection,
+                    width: 18,
+                    height: 18,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: Dimensions.paddingSizeSmall),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Pickup Location',
+                  style: textSemiBold.copyWith(
+                    color: Colors.black,
+                    fontSize: Dimensions.fontSizeDefault,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                _LocationInputField(
+                  isReadOnly: isRideLocked,
+                  focusNode: pickFocus,
+                  controller: locationController.pickupLocationController,
+                  onChanged: (value) => Get.find<LocationController>()
+                      .searchLocation(context, value, type: LocationType.from),
+                  onTap: () {
+                    if (isRideLocked) {
+                      showCustomSnackBar(
+                        'your_ride_is_ongoing_complete'.tr,
+                        isError: true,
+                      );
+                    }
+                  },
+                  onMapTap: () => onOpenMap(LocationType.from, locationController),
+                ),
+                const SizedBox(height: Dimensions.paddingSizeDefault),
+                Text(
+                  'Destination',
+                  style: textSemiBold.copyWith(
+                    color: Colors.black,
+                    fontSize: Dimensions.fontSizeDefault,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                _LocationInputField(
+                  isReadOnly: isRideLocked,
+                  focusNode: destinationFocus,
+                  controller: locationController.destinationLocationController,
+                  onChanged: (value) => Get.find<LocationController>()
+                      .searchLocation(context, value.trim(), type: LocationType.to),
+                  onTap: () {
+                    if (isRideLocked) {
+                      showCustomSnackBar(
+                        'your_ride_is_ongoing_complete'.tr,
+                        isError: true,
+                      );
+                    }
+                  },
+                  onMapTap: () => onOpenMap(LocationType.to, locationController),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LocationInputField extends StatelessWidget {
+  final bool isReadOnly;
+  final FocusNode? focusNode;
+  final TextEditingController controller;
+  final Future<dynamic> Function(String) onChanged;
+  final VoidCallback onTap;
+  final VoidCallback onMapTap;
+
+  const _LocationInputField({
+    required this.isReadOnly,
+    this.focusNode,
+    required this.controller,
+    required this.onChanged,
+    required this.onTap,
+    required this.onMapTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeSmall),
+      decoration: BoxDecoration(
+        color: Color(0xFFB8D4F0),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: CustomSearchField(
+              isReadOnly: isReadOnly,
+              focusNode: focusNode,
+              controller: controller,
+              hint: 'Location',
+              onChanged: onChanged,
+              onTap: onTap,
+            ),
+          ),
+          InkWell(
+            onTap: onMapTap,
+            child: const Icon(Icons.location_on, color: Colors.black, size: 22),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TripFieldTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final VoidCallback onTap;
+
+  const _TripFieldTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 18, color: Colors.black),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: textSemiBold.copyWith(
+                color: Colors.black,
+                fontSize: Dimensions.fontSizeDefault,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            height: 48,
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.black.withOpacity(0.18)),
+            ),
+            child: Text(
+              value,
+              style: textRegular.copyWith(
+                color: Colors.black,
+                fontSize: Dimensions.fontSizeDefault,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SeatsDropdown extends StatelessWidget {
+  final int value;
+  final ValueChanged<int?> onChanged;
+
+  const _SeatsDropdown({
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.event_seat_outlined, size: 18, color: Colors.black),
+            const SizedBox(width: 6),
+            Text(
+              'Seats',
+              style: textSemiBold.copyWith(
+                color: Colors.black,
+                fontSize: Dimensions.fontSizeDefault,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.black.withOpacity(0.18)),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<int>(
+              value: value,
+              isExpanded: true,
+              icon: const Icon(Icons.keyboard_arrow_down, color: Colors.black),
+              items: List.generate(
+                8,
+                (index) => DropdownMenuItem<int>(
+                  value: index + 1,
+                  child: Text(
+                    '${index + 1}',
+                    style: textRegular.copyWith(color: Colors.black),
+                  ),
+                ),
+              ),
+              onChanged: onChanged,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
