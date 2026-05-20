@@ -198,17 +198,17 @@ class ProfileScreen extends StatelessWidget {
                 onTap: () => Get.to(() => const MyAddressScreen()),
               ),
               ProfileMenuItem(
-                title: 'message',
+                title: 'Messages',
                 icon: Images.profileMessage,
                 onTap: () => Get.to(() => const MessageListScreen()),
               ),
               ProfileMenuItem(
-                title: 'my_wallet',
+                title: 'My Wallet',
                 icon: Images.profileMyWallet,
                 onTap: () => Get.to(() => const WalletScreen()),
               ),
               ProfileMenuItem(
-                title: 'my_offer',
+                title: 'My Offers',
                 icon: Images.paymentAndVoucher,
                 onTap: () => Get.to(() => MyOfferScreen()),
               ),

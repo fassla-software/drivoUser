@@ -1,6 +1,7 @@
 import 'driver_model.dart';
 import 'vehicle_model.dart';
 import 'match_point_model.dart';
+import 'boarding_point_model.dart';
 
 class LocationPoint {
   final double lat;
@@ -98,6 +99,11 @@ class PoolRide {
   final LocationPoint? closestDropoff;
   final bool? isRecurring;
   final RecurringInfo? recurringInfo;
+  final String? carpoolType;
+  final BoardingPoint? boardingPointStart;
+  final BoardingPoint? boardingPointEnd;
+  final String? departureTime;
+  final String? returnTime;
 
   PoolRide({
     required this.routeId,
@@ -126,6 +132,11 @@ class PoolRide {
     this.closestDropoff,
     this.isRecurring,
     this.recurringInfo,
+    this.carpoolType,
+    this.boardingPointStart,
+    this.boardingPointEnd,
+    this.departureTime,
+    this.returnTime,
   });
 
   factory PoolRide.fromJson(Map<String, dynamic> json) {
@@ -168,6 +179,15 @@ class PoolRide {
         recurringInfo: json['recurring_info'] != null
             ? RecurringInfo.fromJson(json['recurring_info'])
             : null,
+        carpoolType: json['carpool_type'],
+        boardingPointStart: json['boarding_point_start'] != null
+            ? BoardingPoint.fromJson(json['boarding_point_start'])
+            : null,
+        boardingPointEnd: json['boarding_point_end'] != null
+            ? BoardingPoint.fromJson(json['boarding_point_end'])
+            : null,
+        departureTime: json['departure_time'],
+        returnTime: json['return_time'],
       );
     } catch (e) {
       print('Error parsing PoolRide: $e');
@@ -204,6 +224,11 @@ class PoolRide {
       'closest_dropoff': closestDropoff?.toJson(),
       'is_recurring': isRecurring,
       'recurring_info': recurringInfo?.toJson(),
+      'carpool_type': carpoolType,
+      'boarding_point_start': boardingPointStart?.toJson(),
+      'boarding_point_end': boardingPointEnd?.toJson(),
+      'departure_time': departureTime,
+      'return_time': returnTime,
     };
   }
 }

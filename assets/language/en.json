@@ -784,6 +784,22 @@
   "customer_note": "Customer Note:",
   "enter_valid_contact_number": "Enter valid contact number",
   "parcel_track": "Parcel Track",
-  "track_now": "Track Now"
+  "track_now": "Track Now",
+  "ac": "Air conditioning",
+  "music": "Music",
+  "luggage": "Luggage",
+  "no_smoking": "No smoking",
+  "screen_entertainment": "Screen entertainment",
+  "found_rides": "Found rides",
+  "available_rides": "Available rides",
+  "rides": "rides",
+  "seats": "seats",
+  "egp": "EGP",
+  "try_different_route_or_date": "Try a different route or date",
+  "searchresult": "Search result",
+  "carpool": "Carpool",
+  "carpool_details": "Carpool details",
+  "no_carpool_trip_found": "No carpool trips found",
+  "trip_status": "Trip status"
 
 }

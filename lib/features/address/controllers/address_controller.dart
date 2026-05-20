@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:ride_sharing_user_app/data/api_checker.dart';
 import 'package:ride_sharing_user_app/features/address/domain/services/address_service_interface.dart';
@@ -5,104 +6,219 @@ import 'package:ride_sharing_user_app/helper/display_helper.dart';
 import 'package:ride_sharing_user_app/util/images.dart';
 import 'package:ride_sharing_user_app/features/address/domain/models/address_model.dart';
 
+class AddressController extends GetxController
+    implements GetxService {
 
-class AddressController extends GetxController implements GetxService {
-  final AddressServiceInterface addressServiceInterface;
-  AddressController({required this.addressServiceInterface});
+  final AddressServiceInterface
+      addressServiceInterface;
+
+  AddressController({
+    required this.addressServiceInterface,
+  });
 
   List<Address>? addressList;
 
   bool isLoading = false;
+
   int? _currentIndex = 0;
+
   int? get currentIndex => _currentIndex;
 
   List<AddressTypeModel> addressTypeList = [
-    AddressTypeModel('home', Images.homeIcon),
-    AddressTypeModel('office', Images.workIcon),
-    AddressTypeModel('others', Images.otherIcon),
-    ];
+
+    AddressTypeModel(
+      'home',
+      Images.homeIcon,
+    ),
+
+    AddressTypeModel(
+      'office',
+      Images.workIcon,
+    ),
+
+    AddressTypeModel(
+      'others',
+      Images.otherIcon,
+    ),
+  ];
 
   int _selectAddressIndex = 0;
 
-  int get selectAddressIndex => _selectAddressIndex;
-  String  selectAddress = 'home';
+  int get selectAddressIndex =>
+      _selectAddressIndex;
 
-  void updateAddressIndex(int index, bool notify) {
+  String selectAddress = 'home';
+
+  void updateAddressIndex(
+    int index,
+    bool notify,
+  ) {
+
     _selectAddressIndex = index;
-    selectAddress = addressTypeList[_selectAddressIndex].title;
-    if(notify) {
+
+    selectAddress =
+        addressTypeList[
+                _selectAddressIndex]
+            .title;
+
+    if (notify) {
       update();
     }
   }
 
-  Future<void> addNewAddress(Address address, {bool updateAddress = false}) async {
-    isLoading = true;
-    update();
-    Response response;
-    if(updateAddress){
-      response = await addressServiceInterface.update(address);
-    }else{
-      response = await addressServiceInterface.add(address);
-    }
-    if(response.statusCode == 200) {
-      getAddressList(1);
-      Get.back();
-      isLoading = false;
-      showCustomSnackBar(updateAddress ?'address_updated_successfully'.tr : 'address_added_successfully'.tr, isError: false);
-    }else{
-      ApiChecker.checkApi(response);
-    }
+ Future<void> addNewAddress(
+  Address address, {
+  bool updateAddress = false,
+}) async {
+
+  isLoading = true;
+  update();
+
+  Response response;
+
+  if (updateAddress) {
+
+    response =
+        await addressServiceInterface
+            .update(address);
+
+  } else {
+
+    response =
+        await addressServiceInterface
+            .add(address);
+  }
+
+  if (response.statusCode == 200) {
+
+    await getAddressList(1);
+
     isLoading = false;
     update();
 
-  }
+    /// IMPORTANT FIX
+    Navigator.of(Get.context!).pop();
 
-  Future<void> getAddressList(int offset) async {
+    await Future.delayed(
+      const Duration(milliseconds: 300),
+    );
+
+    showCustomSnackBar(
+
+      updateAddress
+          ? 'address_updated_successfully'.tr
+          : 'address_added_successfully'.tr,
+
+      isError: false,
+    );
+
+  } else {
+
+    isLoading = false;
+    update();
+
+    ApiChecker.checkApi(response);
+  }
+}
+
+  Future<void> getAddressList(
+    int offset,
+  ) async {
+
     isLoading = true;
 
-    Response? response = await addressServiceInterface.getList(offset : offset);
-    if(response!.statusCode == 200 && response.body['data'] != null){
+    Response? response =
+        await addressServiceInterface
+            .getList(
+      offset: offset,
+    );
+
+    if (response!.statusCode == 200 &&
+        response.body['data'] != null) {
+
       addressList = [];
+
       isLoading = false;
-      addressList!.addAll(AddressModel.fromJson(response.body).data!);
-    }else{
+
+      addressList!.addAll(
+        AddressModel.fromJson(
+          response.body,
+        ).data!,
+      );
+
+    } else {
+
       isLoading = false;
+
       ApiChecker.checkApi(response);
     }
-    isLoading = false;
-    update();
 
+    isLoading = false;
+
+    update();
   }
 
-  Future<void> deleteAddress(String addressId) async {
+  Future<void> deleteAddress(
+    String addressId,
+  ) async {
+
     isLoading = true;
     update();
-    Response? response = await addressServiceInterface.delete(addressId);
-    if(response!.statusCode == 200){
+
+    Response? response =
+        await addressServiceInterface
+            .delete(addressId);
+
+    if (response!.statusCode == 200) {
+
       Get.back();
+
       isLoading = false;
+
       getAddressList(1);
-      showCustomSnackBar('address_deleted_successfully'.tr, isError: false);
-    }else{
+
+      await Future.delayed(
+        const Duration(
+          milliseconds: 300,
+        ),
+      );
+
+      showCustomSnackBar(
+        'address_deleted_successfully'
+            .tr,
+        isError: false,
+      );
+
+    } else {
+
       ApiChecker.checkApi(response);
     }
+
     isLoading = false;
     update();
-
   }
 
-  void setCurrentIndex(int index, bool notify) {
+  void setCurrentIndex(
+    int index,
+    bool notify,
+  ) {
+
     _currentIndex = index;
-    if(notify) {
+
+    if (notify) {
       update();
     }
   }
 }
 
+class AddressTypeModel {
 
-class AddressTypeModel{
   final String title;
+
   final String icon;
 
-  AddressTypeModel(this.title, this.icon);
+  AddressTypeModel(
+    this.title,
+    this.icon,
+  );
 }

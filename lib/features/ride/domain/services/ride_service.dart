@@ -209,6 +209,24 @@ class RideService implements RideServiceInterface {
   }
 
   @override
+  Future createCarpoolRequest({
+    required Map<String, dynamic> body,
+  }) async {
+    return await rideRepositoryInterface.createCarpoolRequest(body: body);
+  }
+
+  @override
+  Future submitCarpoolPayment({
+    required String tripRequestId,
+    required String screenshotPath,
+  }) async {
+    return await rideRepositoryInterface.submitCarpoolPayment(
+      tripRequestId: tripRequestId,
+      screenshotPath: screenshotPath,
+    );
+  }
+
+  @override
   Future tripAcceptOrReject(String tripId, String type, String driverId) async {
     return await rideRepositoryInterface.tripAcceptOrReject(
         tripId, type, driverId);

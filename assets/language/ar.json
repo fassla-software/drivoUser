@@ -1048,5 +1048,21 @@
   "please_submit_a_valid_phone_number": "أدخل رقم هاتف صحيح",
   "change": "تغيير",
   "download_failed": "فشل التنزيل",
-  "downloaded_successfully": "تم التنزيل بنجاح"
+  "downloaded_successfully": "تم التنزيل بنجاح",
+  "ac": "مكيف",
+  "music": "موسيقى",
+  "luggage": "حقائب",
+  "no_smoking": "ممنوع التدخين",
+  "screen_entertainment": "شاشة ترفيه",
+  "found_rides": "الرحلات المتاحة",
+  "available_rides": "رحلات متاحة",
+  "rides": "رحلات",
+  "seats": "مقاعد",
+  "egp": "ج.م",
+  "try_different_route_or_date": "جرّب مسارًا أو تاريخًا مختلفًا",
+  "searchresult": "نتيجة البحث",
+  "carpool": "كاربول",
+  "carpool_details": "تفاصيل الكاربول",
+  "no_carpool_trip_found": "لا توجد رحلات كاربول",
+  "trip_status": "حالة الرحلة"
 }

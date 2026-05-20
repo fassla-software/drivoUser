@@ -69,23 +69,14 @@ class TripDetails {
   String? parcelCompleteTime;
   ParcelRefund? parcelRefund;
   CarpoolRideLocation? carpoolRideLocation;
-    List<String>? selectedDates;
+  bool? isCarpool;
+  String? distanceText;
 
-  /// ✅ getter الجديد
-  String get displayDate {
-    if (type == 'carpool' &&
-        selectedDates != null &&
-        selectedDates!.isNotEmpty) {
-      return selectedDates!.first;
-    }
-    return createdAt ?? '';
-  }
   TripDetails(
       {this.id,
       this.refId,
       this.driver,
       this.vehicle,
-      this.selectedDates,
       this.vehicleCategory,
       this.estimatedFare,
       this.orgEstFare,
@@ -137,7 +128,9 @@ class TripDetails {
       this.returnTime,
       this.parcelCompleteTime,
       this.parcelRefund,
-      this.carpoolRideLocation});
+      this.carpoolRideLocation,
+      this.isCarpool,
+      this.distanceText});
 
   TripDetails.fromJson(Map<String, dynamic> json) {
     print('=== TripDetails.fromJson called ===');
@@ -161,11 +154,7 @@ class TripDetails {
           ? VehicleCategory.fromJson(json['vehicle_category'])
           : null;
       print('vehicleCategory: ${vehicleCategory != null ? 'parsed' : 'null'}');
-  /// 👇 الجديد (parsing)
-    selectedDates = json['selected_dates'] != null
-        ? List<String>.from(
-            json['selected_dates'].map((e) => e.toString()))
-        : [];
+
       estimatedFare = json['estimated_fare'] != null
           ? double.parse(json['estimated_fare'].toString())
           : 0;
@@ -259,7 +248,7 @@ class TripDetails {
       otp = json['otp'];
       riseRequestCount = json['rise_request_count'];
       type = json['type'];
-      createdAt = json['created_at'];
+      createdAt = json['scheduled_at'];
       entrance = json['entrance'];
       intermediateAddresses = json['intermediate_addresses'];
       encodedPolyline = json['encoded_polyline'];
@@ -287,6 +276,8 @@ class TripDetails {
       isReviewed = json['driver_review'];
       returnTime = json['return_time'];
       parcelCompleteTime = json['parcel_complete_time'];
+      isCarpool = json['is_carpool'] == true || json['is_carpool'] == 1;
+      distanceText = json['distance_text']?.toString();
 
       print('=== TripDetails.fromJson completed successfully ===');
     } catch (e) {

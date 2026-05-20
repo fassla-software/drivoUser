@@ -13,7 +13,7 @@ class PoolRepository implements PoolInterface {
   @override
   Future<Response> findMatchingRides(FindMatchRequest request) async {
     return await apiClient.postData(
-      AppConstants.userSearchTripe,
+      AppConstants.findRidesUri,
       request.toJson(),
     );
   }
@@ -23,6 +23,13 @@ class PoolRepository implements PoolInterface {
     return await apiClient.postData(
       AppConstants.joinTripe,
       request.toJson(),
+    );
+  }
+
+  @override
+  Future<Response> getBoardingPoints() async {
+    return await apiClient.getData(
+      AppConstants.boardingPointsUri,
     );
   }
 }

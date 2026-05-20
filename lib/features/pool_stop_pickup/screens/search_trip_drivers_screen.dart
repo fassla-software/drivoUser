@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:ride_sharing_user_app/common_widgets/app_bar_widget.dart';
 import 'package:ride_sharing_user_app/features/pool_stop_pickup/controller/pool_stop_pickup_controller.dart';
 import 'package:ride_sharing_user_app/features/pool_stop_pickup/domain/models/pool_ride_model.dart';
+import 'package:ride_sharing_user_app/features/ride/controllers/ride_controller.dart';
+import 'package:ride_sharing_user_app/features/ride/screens/trip_details_screen.dart';
 import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/util/images.dart';
 import 'package:ride_sharing_user_app/util/styles.dart';
@@ -13,8 +14,21 @@ class SearchTripDriversScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBarWidget(title: 'available_rides'.tr),
-      body: GetBuilder<PoolStopPickupController>(
+      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+      appBar: AppBar(
+        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+        elevation: 0,
+        centerTitle: true,
+        toolbarHeight: 80,
+        title: Text(
+          'Search Results'.tr,
+          style: textBold.copyWith(
+            color: const Color.fromARGB(255, 255, 255, 255),
+            fontSize: Dimensions.fontSizeLarge,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Color(0xFF0F172A)),
+      ),      body: GetBuilder<PoolStopPickupController>(
         builder: (poolController) {
           if (poolController.isSearchingTrips) {
             return const Center(
@@ -54,56 +68,26 @@ class SearchTripDriversScreen extends StatelessWidget {
             );
           }
 
-          return Column(
-            children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
-                child: Row(
-                  children: [
-                    Text(
-                      'found_rides'.tr,
-                      style: textBold.copyWith(
-                        fontSize: Dimensions.fontSizeLarge,
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: Dimensions.paddingSizeSmall,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${poolController.availableTrips.length} ${'rides'.tr}',
-                        style: textMedium.copyWith(
-                          color: Colors.white,
-                          fontSize: Dimensions.fontSizeSmall,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+       return ListView(
+  children: [
+    // Header
+   
 
-              // Rides List
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: Dimensions.paddingSizeDefault,
-                  ),
-                  itemCount: poolController.availableTrips.length,
-                  itemBuilder: (context, index) {
-                    PoolRide ride = poolController.availableTrips[index];
-                    return _buildRideCard(context, ride, index, poolController);
-                  },
-                ),
-              ),
-            ],
-          );
+    const SizedBox(height: Dimensions.paddingSizeDefault),
+
+    // Ride Cards
+    ...poolController.availableTrips.map(
+      (ride) => _buildRideCard(
+        context,
+        ride,
+        poolController.availableTrips.indexOf(ride),
+        poolController,
+      ),
+    ),
+
+    const SizedBox(height: 20),
+  ],
+);
         },
       ),
     );
@@ -115,14 +99,15 @@ class SearchTripDriversScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: Dimensions.paddingSizeDefault),
       padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(Dimensions.radiusDefault),
+        border: Border.all(color: const Color(0xFF0F9D88).withOpacity(0.12)),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).hintColor.withOpacity(0.1),
-            blurRadius: 8,
+            color: const Color(0xFF0F9D88).withOpacity(0.08),
+            blurRadius: 14,
             spreadRadius: 1,
-            offset: const Offset(0, 2),
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -207,20 +192,7 @@ class SearchTripDriversScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: Dimensions.paddingSizeSmall),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  ride.category,
-                  style: textRegular.copyWith(
-                    fontSize: Dimensions.fontSizeSmall,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                ),
-              ),
+             
             ],
           ),
 
@@ -243,19 +215,9 @@ class SearchTripDriversScreen extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              Icon(
-                Icons.people,
-                size: 16,
-                color: Theme.of(context).hintColor,
-              ),
+              
               const SizedBox(width: Dimensions.paddingSizeExtraSmall),
-              Text(
-                '${ride.seatsAvailable} ${'seats'.tr}',
-                style: textRegular.copyWith(
-                  fontSize: Dimensions.fontSizeSmall,
-                  color: Theme.of(context).hintColor,
-                ),
-              ),
+              
             ],
           ),
 
@@ -271,8 +233,11 @@ class SearchTripDriversScreen extends StatelessWidget {
                 _buildAmenityChip(context, Icons.music_note, 'music'.tr),
               if (ride.allowLuggage)
                 _buildAmenityChip(context, Icons.luggage, 'luggage'.tr),
-              if (!ride.isSmokingAllowed)
-                _buildAmenityChip(context, Icons.smoke_free, 'no_smoking'.tr),
+              if (ride.isSmokingAllowed)
+                _buildAmenityChip(context, Icons.smoke_free, 'smoking'.tr),
+                
+              if (ride.hasScreenEntertainment)
+                _buildAmenityChip(context, Icons.tv, 'screen_entertainment'.tr),
             ],
           ),
 
@@ -282,9 +247,14 @@ class SearchTripDriversScreen extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: controller.isJoining(ride.routeId)
-                  ? null
-                  : () => _joinRide(context, ride, controller),
+             onPressed: () {
+  Get.to(
+    () => TripDetailsScreen(
+      trip: ride,
+      rideController: Get.find<RideController>(),
+    ),
+  );
+},
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).primaryColor,
                 padding: const EdgeInsets.symmetric(
@@ -304,7 +274,7 @@ class SearchTripDriversScreen extends StatelessWidget {
                       ),
                     )
                   : Text(
-                      'Join Ride - ${ride.price} EGP',
+                      'view_details'.tr,
                       style: textBold.copyWith(
                         color: Colors.white,
                         fontSize: Dimensions.fontSizeDefault,
@@ -352,38 +322,5 @@ class SearchTripDriversScreen extends StatelessWidget {
     } catch (e) {
       return dateTime;
     }
-  }
-
-  void _joinRide(BuildContext context, PoolRide ride,
-      PoolStopPickupController controller) {
-    Get.dialog(
-      AlertDialog(
-        title: Text('Join Ride'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Do you want to join this ride?'),
-            const SizedBox(height: 8),
-            Text('Driver: ${ride.driver.fullName}'),
-            Text('Price: ${ride.price} EGP'),
-            Text('Seats: ${controller.selectedSeats}'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Get.back();
-              controller.joinRide(ride);
-            },
-            child: Text('Confirm'),
-          ),
-        ],
-      ),
-    );
   }
 }

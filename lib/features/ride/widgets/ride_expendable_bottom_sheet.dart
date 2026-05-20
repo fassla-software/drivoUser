@@ -2454,6 +2454,7 @@ Future<void> _searchForCarpoolRides(RideController rideController) async {
   try {
     // Create the request object
     FindMatchRequest request = FindMatchRequest(
+      carpoolType: 'trip',
       pickupLat: rideController.pickupAddress!.latitude!,
       pickupLng: rideController.pickupAddress!.longitude!,
       dropoffLat: rideController.destinationAddress!.latitude!,

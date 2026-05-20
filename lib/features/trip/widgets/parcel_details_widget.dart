@@ -41,71 +41,7 @@ class ParcelDetailsWidget extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'trip_details'.tr,
-                style: textBold.copyWith(
-                    fontSize: Dimensions.fontSizeDefault,
-                    color: Theme.of(context).primaryColor),
-              ),
-              const SizedBox(
-                height: Dimensions.paddingSizeSmall,
-              ),
-              TripRouteWidget(
-                pickupAddress: tripDetails.pickupAddress!,
-                destinationAddress: tripDetails.destinationAddress!,
-                extraOne: firstRoute,
-                extraTwo: secondRoute,
-                entrance: tripDetails.entrance,
-              ),
-              const SizedBox(
-                height: Dimensions.paddingSizeDefault,
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                    vertical: Dimensions.paddingSizeSmall),
-                child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(children: [
-                        Image.asset(
-                          Images.profileMyWallet,
-                          height: 15,
-                          width: 15,
-                        ),
-                        const SizedBox(
-                          width: Dimensions.paddingSizeSmall,
-                        ),
-                        Text(
-                          'total_distance'.tr,
-                          style: textRegular.copyWith(
-                            color: Theme.of(context)
-                                .textTheme
-                                .bodyMedium!
-                                .color!
-                                .withOpacity(0.8),
-                            fontSize: Dimensions.fontSizeSmall,
-                          ),
-                        ),
-                      ]),
-                      Text(
-                        PriceConverter.formatDistance(
-                            tripDetails.actualDistance),
-                        style: textRegular.copyWith(
-                          color: Theme.of(context)
-                              .textTheme
-                              .bodyMedium!
-                              .color!
-                              .withOpacity(0.8),
-                          fontSize: Dimensions.fontSizeSmall,
-                        ),
-                      )
-                    ]),
-              )
-            ],
-          ),
+          
         ),
         Container(
           decoration: BoxDecoration(

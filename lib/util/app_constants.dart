@@ -127,6 +127,10 @@ class AppConstants {
   static const String joinTripe = '/api/passenger/join';
   static const String carpoolSubmitRideRequest =
       '/api/passenger/create-carpool-request';
+  static const String findRidesUri = '/api/customer/find-rides';
+  static const String boardingPointsUri = '/api/carpool/boarding-points';
+  static const String carpoolCreateRequest = '/api/customer/create-request';
+  static const String carpoolSubmitPayment = '/api/customer/carpool/submit-payment';
 
   /// Shared Key
   static const String notification = 'notification';

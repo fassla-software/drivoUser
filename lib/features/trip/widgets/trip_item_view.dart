@@ -22,9 +22,11 @@ class TripItemView extends StatelessWidget {
   const TripItemView(
       {super.key, required this.tripDetails, this.isDetailsScreen = false});
 
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
+ @override
+Widget build(BuildContext context) {
+  return Material(
+    color: Colors.white,
+    child: InkWell(
       onTap: () {
         if ((tripDetails.type == 'parcel' &&
                 tripDetails.currentStatus == 'accepted') ||
@@ -214,10 +216,8 @@ class TripItemView extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        tripDetails.type == 'carpool'
-                            ? tripDetails.selectedDates?.join(', ') ?? ''
-                            : DateConverter.isoStringToDateTimeString(
-                                tripDetails.createdAt ?? ''),
+                        DateConverter.isoStringToDateTimeString(
+                            tripDetails.createdAt!),
                         style: textRegular.copyWith(
                           fontSize: Dimensions.fontSizeSmall,
                           color: Theme.of(context)
@@ -309,6 +309,7 @@ class TripItemView extends StatelessWidget {
               ])),
         ]),
       ),
+      )
     );
   }
 }

@@ -9,6 +9,9 @@ import 'package:ride_sharing_user_app/features/pool_stop_pickup/domain/models/fi
 import 'package:ride_sharing_user_app/features/pool_stop_pickup/domain/models/find_match_response.dart';
 import 'package:ride_sharing_user_app/features/pool_stop_pickup/domain/models/pool_ride_model.dart';
 import 'package:ride_sharing_user_app/features/pool_stop_pickup/domain/models/join_request.dart';
+import 'package:ride_sharing_user_app/features/pool_stop_pickup/domain/models/boarding_point_model.dart';
+
+import 'package:ride_sharing_user_app/localization/localization_controller.dart';
 
 class PoolStopPickupController extends GetxController implements GetxService {
   final PoolService poolService;
@@ -39,9 +42,69 @@ class PoolStopPickupController extends GetxController implements GetxService {
   String selectedRideType = 'work';
   String selectedDate = '';
 
+  // New carpool type state fields
+  String selectedCarpoolType = 'trip';
+  List<BoardingPoint> boardingPoints = [];
+  
+  String? selectedStartCity;
+  String? selectedEndCity;
+  BoardingPoint? selectedBoardingPointStart;
+  BoardingPoint? selectedBoardingPointEnd;
+  
+  bool isLoadingBoardingPoints = false;
+  String? selectedDepartureTime;
+  String? selectedReturnTime;
+
   bool get isLoading => _isLoading;
   bool get isSearchingTrips => _isSearchingTrips;
   bool isJoining(int routeId) => _joiningRouteIds.contains(routeId);
+
+  List<String> _splitString(String value) {
+    final regex = RegExp(r'\s*-\s*|\s+to\s+');
+    final parts = value.split(regex);
+    return parts.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+  }
+
+  List<String> get availableCities {
+    final isLtr = Get.find<LocalizationController>().isLtr;
+    final cities = boardingPoints
+        .map((p) {
+          final nameToUse = (isLtr ? p.name : p.nameAr).isNotEmpty 
+              ? (isLtr ? p.name : p.nameAr) 
+              : p.name;
+          final parts = _splitString(nameToUse);
+          return parts.isNotEmpty ? parts.first : '';
+        })
+        .where((c) => c.isNotEmpty)
+        .toSet()
+        .toList();
+    cities.sort();
+    return cities;
+  }
+
+  List<BoardingPoint> getAreasForCity(String? city) {
+    if (city == null) return [];
+    final isLtr = Get.find<LocalizationController>().isLtr;
+    return boardingPoints.where((p) {
+      final nameToUse = (isLtr ? p.name : p.nameAr).isNotEmpty 
+          ? (isLtr ? p.name : p.nameAr) 
+          : p.name;
+      final parts = _splitString(nameToUse);
+      return parts.isNotEmpty && parts.first == city;
+    }).toList();
+  }
+
+  String getAreaName(BoardingPoint point) {
+    final isLtr = Get.find<LocalizationController>().isLtr;
+    final nameToUse = (isLtr ? point.name : point.nameAr).isNotEmpty 
+        ? (isLtr ? point.name : point.nameAr) 
+        : point.name;
+    final parts = _splitString(nameToUse);
+    if (parts.length > 1) {
+      return parts.sublist(1).join(' - ').trim();
+    }
+    return nameToUse.trim();
+  }
 
   void setPickupAddress(Address address) {
     pickupAddress = address;
@@ -55,15 +118,72 @@ class PoolStopPickupController extends GetxController implements GetxService {
     update();
   }
 
+  void setSelectedCarpoolType(String type, {bool notify = true}) {
+    selectedCarpoolType = type;
+    if (notify) update();
+  }
+
+  void setSelectedStartCity(String? city) {
+    selectedStartCity = city;
+    selectedBoardingPointStart = null; // Reset area when city changes
+    update();
+  }
+
+  void setSelectedEndCity(String? city) {
+    selectedEndCity = city;
+    selectedBoardingPointEnd = null; // Reset area when city changes
+    update();
+  }
+
+  void setSelectedBoardingPointStart(BoardingPoint? point) {
+    selectedBoardingPointStart = point;
+    update();
+  }
+
+  void setSelectedBoardingPointEnd(BoardingPoint? point) {
+    selectedBoardingPointEnd = point;
+    update();
+  }
+
+  void setTimes({String? departure, String? returnTime}) {
+    if (departure != null) selectedDepartureTime = departure;
+    if (returnTime != null) selectedReturnTime = returnTime;
+    update();
+  }
+
   void setMapController(GoogleMapController controller) {
     mapController = controller;
   }
 
+  Future<void> getBoardingPoints() async {
+    isLoadingBoardingPoints = true;
+    update();
+    try {
+      final list = await poolService.getBoardingPoints();
+      if (list != null) {
+        boardingPoints = list;
+      }
+    } catch (e) {
+      print('Error in PoolStopPickupController.getBoardingPoints: $e');
+    } finally {
+      isLoadingBoardingPoints = false;
+      update();
+    }
+  }
+
   Future<void> searchAvailableTrips() async {
-    if (pickupAddress == null || destinationAddress == null) {
-      Get.snackbar(
-          'Error', 'Please select both pickup and destination locations');
-      return;
+    if (selectedCarpoolType == 'travel') {
+      if (selectedBoardingPointStart == null || selectedBoardingPointEnd == null) {
+        Get.snackbar(
+            'Error', 'Please select both start and end boarding points');
+        return;
+      }
+    } else {
+      if (pickupAddress == null || destinationAddress == null) {
+        Get.snackbar(
+            'Error', 'Please select both pickup and destination locations');
+        return;
+      }
     }
 
     if (selectedDate.isEmpty) {
@@ -77,14 +197,19 @@ class PoolStopPickupController extends GetxController implements GetxService {
     try {
       // Create the request object
       FindMatchRequest request = FindMatchRequest(
-        pickupLat: pickupAddress!.latitude!,
-        pickupLng: pickupAddress!.longitude!,
-        dropoffLat: destinationAddress!.latitude!,
-        dropoffLng: destinationAddress!.longitude!,
+        carpoolType: selectedCarpoolType,
+        pickupLat: selectedCarpoolType == 'travel' ? null : pickupAddress!.latitude!,
+        pickupLng: selectedCarpoolType == 'travel' ? null : pickupAddress!.longitude!,
+        dropoffLat: selectedCarpoolType == 'travel' ? null : destinationAddress!.latitude!,
+        dropoffLng: selectedCarpoolType == 'travel' ? null : destinationAddress!.longitude!,
         day: selectedDate,
         gender: selectedGender,
         seatsRequired: selectedSeats,
         rideType: selectedRideType,
+        departureTime: selectedCarpoolType == 'routine' ? selectedDepartureTime : null,
+        returnTime: selectedCarpoolType == 'routine' ? selectedReturnTime : null,
+        boardingPointStartId: selectedCarpoolType == 'travel' ? selectedBoardingPointStart?.id : null,
+        boardingPointEndId: selectedCarpoolType == 'travel' ? selectedBoardingPointEnd?.id : null,
       );
 
       // Make the API call
@@ -115,17 +240,19 @@ class PoolStopPickupController extends GetxController implements GetxService {
     } catch (e) {
       availableTrips.clear();
       Get.snackbar(
-          'Error', 'Failed to search for hihuhihstrips: ${e.toString()}');
+          'Error', 'Failed to search for trips: ${e.toString()}');
     } finally {
       _isSearchingTrips = false;
       update();
     }
   }
 
-  Future<void> joinRide(PoolRide poolRide) async {
-    if (pickupAddress == null || destinationAddress == null) {
-      Get.snackbar('Error', 'Pickup and destination addresses are required');
-      return;
+  Future<String?> joinRide(PoolRide poolRide) async {
+    if (selectedCarpoolType != 'travel') {
+      if (pickupAddress == null || destinationAddress == null) {
+        Get.snackbar('Error', 'Pickup and destination addresses are required');
+        return null;
+      }
     }
 
     _joiningRouteIds.add(poolRide.routeId);
@@ -136,10 +263,10 @@ class PoolStopPickupController extends GetxController implements GetxService {
       JoinRequest request = JoinRequest(
         routeId: poolRide.routeId,
         seatsCount: selectedSeats,
-        pickupLat: pickupAddress!.latitude!,
-        pickupLng: pickupAddress!.longitude!,
-        dropoffLat: destinationAddress!.latitude!,
-        dropoffLng: destinationAddress!.longitude!,
+        pickupLat: selectedCarpoolType == 'travel' ? (poolRide.closestPickup?.lat ?? 0.0) : pickupAddress!.latitude!,
+        pickupLng: selectedCarpoolType == 'travel' ? (poolRide.closestPickup?.lng ?? 0.0) : pickupAddress!.longitude!,
+        dropoffLat: selectedCarpoolType == 'travel' ? (poolRide.closestDropoff?.lat ?? 0.0) : destinationAddress!.latitude!,
+        dropoffLng: selectedCarpoolType == 'travel' ? (poolRide.closestDropoff?.lng ?? 0.0) : destinationAddress!.longitude!,
         fare: poolRide.price,
       );
 
@@ -147,21 +274,35 @@ class PoolStopPickupController extends GetxController implements GetxService {
       bool success = await poolService.joinRide(request);
 
       if (success) {
-        Get.snackbar(
-          'Success',
-          'Join request sent successfully! The driver will be notified.',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
+        final response =
+            await Get.find<CarPollRideController>().carpoolSubmitRideRequest(
+          poolRide.routeId.toString(),
+          poolRide.price.toDouble(),
+          selectedCarpoolType == 'travel' ? (poolRide.closestPickup?.lat ?? 0.0) : pickupAddress!.latitude!,
+          selectedCarpoolType == 'travel' ? (poolRide.closestPickup?.lng ?? 0.0) : pickupAddress!.longitude!,
+          selectedCarpoolType == 'travel' ? (poolRide.closestDropoff?.lat ?? 0.0) : destinationAddress!.latitude!,
+          selectedCarpoolType == 'travel' ? (poolRide.closestDropoff?.lng ?? 0.0) : destinationAddress!.longitude!,
         );
 
-        await Get.find<CarPollRideController>().carpoolSubmitRideRequest(
-            poolRide.routeId.toString(),
-            poolRide.price.toDouble(),
-            pickupAddress!.latitude!,
-            pickupAddress!.longitude!,
-            destinationAddress!.latitude!,
-            destinationAddress!.longitude!);
-        // Optionally navigate to a different screen or refresh data
+        if (response.statusCode == 200 && response.body['data'] != null) {
+          final tripId = response.body['data']['id']?.toString();
+          if (tripId != null && tripId.isNotEmpty) {
+            Get.snackbar(
+              'Success',
+              'Join request sent successfully! The driver will be notified.',
+              backgroundColor: Colors.green,
+              colorText: Colors.white,
+            );
+            return tripId;
+          }
+        }
+
+        Get.snackbar(
+          'Error',
+          'Failed to create trip. Please try again.',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
       } else {
         Get.snackbar(
           'Error',
@@ -181,6 +322,7 @@ class PoolStopPickupController extends GetxController implements GetxService {
       _joiningRouteIds.remove(poolRide.routeId);
       update();
     }
+    return null;
   }
 
   void setSearchParameters({
@@ -199,6 +341,8 @@ class PoolStopPickupController extends GetxController implements GetxService {
   void clearAddresses() {
     pickupAddress = null;
     destinationAddress = null;
+    selectedBoardingPointStart = null;
+    selectedBoardingPointEnd = null;
     pickupController.clear();
     destinationController.clear();
     availableTrips.clear();

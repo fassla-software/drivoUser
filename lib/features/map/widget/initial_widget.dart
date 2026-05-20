@@ -80,14 +80,7 @@ class _InitialWidgetState extends State<InitialWidget> {
             entrance: locationController.entranceController.text,
           ),
           const SizedBox(height: Dimensions.paddingSizeDefault),
-          if (zoneExtraFareReason != null) ...[
-            Text(zoneExtraFareReason!,
-                style: textRegular.copyWith(
-                    color: Theme.of(context).colorScheme.inverseSurface,
-                    fontSize: 11)),
-            const SizedBox(height: Dimensions.paddingSizeSmall),
-          ],
-          const SizedBox(height: Dimensions.paddingSizeDefault),
+
           TripFareSummery(
             tripFare: rideController.estimatedFare,
             fromParcel: false,

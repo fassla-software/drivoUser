@@ -1,3 +1,5 @@
+import 'package:ride_sharing_user_app/features/pool_stop_pickup/domain/models/boarding_point_model.dart';
+
 class SearchTripeResponseModel {
   String? responseCode;
   String? message;
@@ -76,6 +78,11 @@ class SearchTripeAll {
   String? encodedPolyline;
   ClosestPoint? closestPickup;
   ClosestPoint? closestDropoff;
+  String? carpoolType;
+  BoardingPoint? boardingPointStart;
+  BoardingPoint? boardingPointEnd;
+  String? departureTime;
+  String? returnTime;
 
   SearchTripeAll({
     this.routeId,
@@ -102,6 +109,11 @@ class SearchTripeAll {
     this.encodedPolyline,
     this.closestPickup,
     this.closestDropoff,
+    this.carpoolType,
+    this.boardingPointStart,
+    this.boardingPointEnd,
+    this.departureTime,
+    this.returnTime,
   });
 
   factory SearchTripeAll.fromJson(Map<String, dynamic> json) => SearchTripeAll(
@@ -141,6 +153,15 @@ class SearchTripeAll {
         closestDropoff: json['closest_dropoff'] != null
             ? ClosestPoint.fromJson(json['closest_dropoff'])
             : null,
+        carpoolType: json['carpool_type'],
+        boardingPointStart: json['boarding_point_start'] != null
+            ? BoardingPoint.fromJson(json['boarding_point_start'])
+            : null,
+        boardingPointEnd: json['boarding_point_end'] != null
+            ? BoardingPoint.fromJson(json['boarding_point_end'])
+            : null,
+        departureTime: json['departure_time'],
+        returnTime: json['return_time'],
       );
 }
 

@@ -245,7 +245,10 @@ class Images {
   static const String navProfileIcon = 'assets/image/nav_profile.png';
   static const String truckIcon = 'assets/image/truck.png';
   static const String taskIcon = 'assets/image/task-square.png';
-  static const String peopleIcon = 'assets/image/people.png';
+  static const String peopleIcon = 'assets/image/peopleoutline.png';
+    static const String carman = 'assets/image/car_man.png';
+
+  static const String peopleoutlineIcon = 'assets/image/peopleoutline.png';
   static const String messageQuestionIcon = 'assets/image/message-question.png';
   static const String carTripeIcon = 'assets/image/car_tripe.png';
   static const String calender2Icon = 'assets/image/calender_2.png';

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:ride_sharing_user_app/data/api_client.dart';
 import 'package:ride_sharing_user_app/features/parcel/controllers/parcel_controller.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:ride_sharing_user_app/features/ride/domain/repositories/ride_repository_interface.dart';
 import 'package:ride_sharing_user_app/util/app_constants.dart';
 
@@ -201,6 +202,29 @@ class RideRepository implements RideRepositoryInterface {
       "destination_coordinates": '[$destinationLat,$destinationLng]',
       "min_fare": 5,
     });
+  }
+
+  @override
+  Future<Response> createCarpoolRequest({
+    required Map<String, dynamic> body,
+  }) async {
+    return await apiClient.postData(AppConstants.carpoolCreateRequest, body);
+  }
+
+  @override
+  Future<Response> submitCarpoolPayment({
+    required String tripRequestId,
+    required String screenshotPath,
+  }) async {
+    return await apiClient.postMultipartData(
+      AppConstants.carpoolSubmitPayment,
+      {
+        'trip_request_id': tripRequestId,
+        'payment_method': 'instapay',
+      },
+      MultipartBody('', null),
+      [MultipartBody('screenshot', XFile(screenshotPath))],
+    );
   }
 
   @override

@@ -639,7 +639,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
           ],
 
           // Distance Information
-          if (widget.trip.closestPickup != null) ...[
+          if (widget.trip.closestPickup != null && !(widget.trip is PoolRide && widget.trip.carpoolType == 'travel')) ...[
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -1073,18 +1073,20 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
                         ),
                         const SizedBox(height: 8),
                       ],
-                      Text(
-                        'Walking distance to pickup: ${PriceConverter.formatDistance(PriceConverter.calculateDistance(
-                          trip.pickupMatchPoint.lat,
-                          trip.pickupMatchPoint.lng,
-                          trip.closestPickup?.lat ?? trip.pickupMatchPoint.lat,
-                          trip.closestPickup?.lng ?? trip.pickupMatchPoint.lng,
-                        ))}',
-                        style: textMedium.copyWith(
-                          fontSize: Dimensions.fontSizeSmall,
-                          color: Colors.grey[600],
+                      if (!(trip is PoolRide && trip.carpoolType == 'travel')) ...[
+                        Text(
+                          'Walking distance to pickup: ${PriceConverter.formatDistance(PriceConverter.calculateDistance(
+                            trip.pickupMatchPoint.lat,
+                            trip.pickupMatchPoint.lng,
+                            trip.closestPickup?.lat ?? trip.pickupMatchPoint.lat,
+                            trip.closestPickup?.lng ?? trip.pickupMatchPoint.lng,
+                          ))}',
+                          style: textMedium.copyWith(
+                            fontSize: Dimensions.fontSizeSmall,
+                            color: Colors.grey[600],
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),

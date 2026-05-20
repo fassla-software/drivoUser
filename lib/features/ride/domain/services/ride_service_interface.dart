@@ -81,6 +81,15 @@ abstract class RideServiceInterface {
     required bool isCarpool,
   });
 
+  Future<dynamic> createCarpoolRequest({
+    required Map<String, dynamic> body,
+  });
+
+  Future<dynamic> submitCarpoolPayment({
+    required String tripRequestId,
+    required String screenshotPath,
+  });
+
   Future<dynamic> getRideDetails(String tripId);
   Future<dynamic> tripStatusUpdate(
       String id, String status, String cancellationCause);

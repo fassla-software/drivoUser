@@ -30,6 +30,8 @@ import 'package:ride_sharing_user_app/features/payment/controllers/payment_contr
 import 'package:ride_sharing_user_app/features/pool_stop_pickup/domain/services/pool_service.dart';
 import 'package:ride_sharing_user_app/features/pool_stop_pickup/domain/models/find_match_request.dart';
 import 'package:ride_sharing_user_app/features/pool_stop_pickup/domain/models/find_match_response.dart';
+import 'package:ride_sharing_user_app/features/pool_stop_pickup/controller/pool_stop_pickup_controller.dart';
+import 'package:ride_sharing_user_app/features/payment/screens/carpool_payment_details_screen.dart';
 
 enum RideState {
   initial,
@@ -311,16 +313,41 @@ class RideController extends GetxController implements GetxService {
     update();
 
     LocationController locController = Get.find<LocationController>();
-    Address? pickUpPosition = parcel
-        ? locController.parcelSenderAddress
-        : tripDetails == null
-            ? locController.fromAddress
-            : Address();
-    Address? destinationPosition = parcel
-        ? locController.parcelReceiverAddress
-        : tripDetails == null
-            ? locController.toAddress
-            : Address();
+    Address? pickUpPosition;
+    Address? destinationPosition;
+
+    if (isCarpool) {
+      final poolController = Get.find<PoolStopPickupController>();
+      if (poolController.selectedCarpoolType == 'travel') {
+        final startBP = poolController.selectedBoardingPointStart;
+        final endBP = poolController.selectedBoardingPointEnd;
+        if (startBP != null) {
+          pickUpPosition = Address(
+            latitude: startBP.latitude,
+            longitude: startBP.longitude,
+            address: startBP.name,
+          );
+        }
+        if (endBP != null) {
+          destinationPosition = Address(
+            latitude: endBP.latitude,
+            longitude: endBP.longitude,
+            address: endBP.name,
+          );
+        }
+      } else {
+        pickUpPosition = poolController.pickupAddress;
+        destinationPosition = poolController.destinationAddress;
+      }
+    } else if (parcel) {
+      pickUpPosition = locController.parcelSenderAddress;
+      destinationPosition = locController.parcelReceiverAddress;
+    } else {
+      pickUpPosition =
+          tripDetails == null ? locController.fromAddress : Address();
+      destinationPosition =
+          tripDetails == null ? locController.toAddress : Address();
+    }
 
     if (pickUpPosition == null || destinationPosition == null) {
       // Handle error: Pickup or destination is missing
@@ -489,7 +516,11 @@ class RideController extends GetxController implements GetxService {
     actualFare = 0;
     isLoading = false;
     update();
-    if (isCarpool) {
+
+    // Only navigate to Dashboard if it's carpool AND the request was successful
+    if (isCarpool &&
+        response.statusCode == 200 &&
+        response.body['data'] != null) {
       Get.offAll(() => const DashboardScreen());
     }
 
@@ -564,6 +595,7 @@ class RideController extends GetxController implements GetxService {
     try {
       // Create the request object
       FindMatchRequest request = FindMatchRequest(
+        carpoolType: 'trip',
         pickupLat: pickupAddress!.latitude!,
         pickupLng: pickupAddress!.longitude!,
         dropoffLat: destinationAddress!.latitude!,
@@ -1279,38 +1311,72 @@ class RideController extends GetxController implements GetxService {
     );
 
     try {
-      await submitRideRequest(
-        '',
-        false,
-        isCarpool: true,
+      // Determine carpool type from the trip object
+      final String carpoolType = (trip.carpoolType as String?) ?? 'trip';
+      final String routeId = trip.routeId.toString();
+      final int price = (trip.price as num?)?.toInt() ?? 0;
+      final int seats = selectedSeats;
+
+      // Build type-specific payload
+      final Map<String, dynamic> body = _buildCarpoolRequestBody(
+        carpoolType: carpoolType,
+        routeId: routeId,
+        price: price,
+        seats: seats,
+        trip: trip,
         bookingType: bookingType,
-        selectedDates: selectedDates,
-        // Pass trip details explicitly if needed, but for now assuming tripDetails or carpoolTripDetails might be used or valid logic inside steps
-        // Actually submitRideRequest will need to access the trip object to get seatsAvailable if we want to rely on that.
-        // But selectCarpoolTrip receives 'dynamic trip'.
-        // Let's pass the seatsAvailable directly to submitRideRequest?
-        // Or updated submitRideRequest will use tripDetails.
-        // But tripDetails might not be set to THIS trip yet if we just selected it from a search list.
-        // So we might need to pass the required seats here.
-        requiredSeats: selectedSeats,
       );
+
+      final Response response =
+          await rideServiceInterface.createCarpoolRequest(body: body);
 
       // Close loading dialog
-      Get.back();
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
 
-      // Show success snackbar
-      Get.snackbar(
-        'Success!',
-        'Your carpool ride request has been submitted successfully!',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-        icon: Icon(Icons.check_circle, color: Colors.white),
-        duration: Duration(seconds: 3),
-        snackPosition: SnackPosition.TOP,
-      );
+      if (response.statusCode == 200 && response.body['data'] != null) {
+        final Map<String, dynamic> data =
+            response.body['data'] as Map<String, dynamic>;
+        final bool paymentRequired = data['payment_required'] == true;
+        final List<dynamic> paymentAccounts =
+            (data['payment_accounts'] as List?) ?? [];
+        final Map<String, dynamic>? proration =
+            data['proration'] as Map<String, dynamic>?;
+        final String tripId = (data['trip_id'] as String?) ?? '';
+
+        if (paymentRequired && paymentAccounts.isNotEmpty) {
+          // Route to Instapay payment screen
+          Get.to(() => CarpoolPaymentDetailsScreen(
+                tripId: tripId,
+                carpoolType: carpoolType,
+                totalPrice: price,
+                paymentAccounts: paymentAccounts
+                    .map((e) => Map<String, dynamic>.from(e as Map))
+                    .toList(),
+                proration: proration,
+              ));
+        } else {
+          // Payment not required — go to dashboard
+          Get.offAll(() => const DashboardScreen());
+          Get.snackbar(
+            'Success!',
+            'Your carpool ride request has been submitted successfully!',
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+            icon: const Icon(Icons.check_circle, color: Colors.white),
+            duration: const Duration(seconds: 3),
+            snackPosition: SnackPosition.TOP,
+          );
+        }
+      } else {
+        ApiChecker.checkApi(response);
+      }
     } catch (e) {
       // Close loading dialog
-      Get.back();
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
 
       // Show error snackbar
       Get.snackbar(
@@ -1318,14 +1384,123 @@ class RideController extends GetxController implements GetxService {
         'Failed to submit ride request: ${e.toString()}',
         backgroundColor: Colors.red,
         colorText: Colors.white,
-        icon: Icon(Icons.error, color: Colors.white),
-        duration: Duration(seconds: 3),
+        icon: const Icon(Icons.error, color: Colors.white),
+        duration: const Duration(seconds: 3),
         snackPosition: SnackPosition.TOP,
       );
     } finally {
       isLoading = false;
       update();
     }
+  }
+
+  Future<bool> submitCarpoolPayment({
+    required String tripRequestId,
+    required String screenshotPath,
+  }) async {
+    isLoading = true;
+    update();
+    try {
+      Response response = await rideServiceInterface.submitCarpoolPayment(
+        tripRequestId: tripRequestId,
+        screenshotPath: screenshotPath,
+      );
+      if (response.statusCode == 200 && response.body['response_code'] == 'default_update_200') {
+        return true;
+      } else {
+        ApiChecker.checkApi(response);
+        return false;
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to submit payment verification: ${e.toString()}',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        icon: const Icon(Icons.error, color: Colors.white),
+        duration: const Duration(seconds: 3),
+        snackPosition: SnackPosition.TOP,
+      );
+      return false;
+    } finally {
+      isLoading = false;
+      update();
+    }
+  }
+
+  /// Builds the JSON body for POST /api/customer/create-request
+  /// based on the active carpool type.
+  Map<String, dynamic> _buildCarpoolRequestBody({
+    required String carpoolType,
+    required String routeId,
+    required int price,
+    required int seats,
+    required dynamic trip,
+    required String bookingType,
+  }) {
+    final Map<String, dynamic> body = {
+      'carpool_route_id': routeId,
+      'carpool_type': carpoolType,
+      'min_fare': price,
+      'price': price,
+      'required_seats': seats,
+    };
+
+    switch (carpoolType) {
+      case 'travel':
+        // Use boarding point IDs — no coordinates
+        final boardingStart = trip.boardingPointStart;
+        final boardingEnd = trip.boardingPointEnd;
+        body['boarding_point_start_id'] = boardingStart?.id;
+        body['boarding_point_end_id'] = boardingEnd?.id;
+        break;
+
+      case 'routine':
+        // Add coordinates + departure/return times + booking_type
+        final pickupLat =
+            trip.closestPickup?.lat ?? trip.pickupMatchPoint?.lat ?? 0.0;
+        final pickupLng =
+            trip.closestPickup?.lng ?? trip.pickupMatchPoint?.lng ?? 0.0;
+        final dropLat =
+            trip.closestDropoff?.lat ?? trip.dropoffMatchPoint?.lat ?? 0.0;
+        final dropLng =
+            trip.closestDropoff?.lng ?? trip.dropoffMatchPoint?.lng ?? 0.0;
+        body['pickup_coordinates'] = '[$pickupLat,$pickupLng]';
+        body['destination_coordinates'] = '[$dropLat,$dropLng]';
+        // departure_time / return_time — strip trailing seconds if present
+        final String rawDep = (trip.departureTime as String?) ?? '';
+        final String rawRet = (trip.returnTime as String?) ?? '';
+        body['departure_time'] = _trimToHHMM(rawDep);
+        body['return_time'] = _trimToHHMM(rawRet);
+        body['booking_type'] = bookingType;
+        break;
+
+      case 'trip':
+      case 'north_coast':
+      default:
+        // Use closest match-point coordinates
+        final pickupLat =
+            trip.closestPickup?.lat ?? trip.pickupMatchPoint?.lat ?? 0.0;
+        final pickupLng =
+            trip.closestPickup?.lng ?? trip.pickupMatchPoint?.lng ?? 0.0;
+        final dropLat =
+            trip.closestDropoff?.lat ?? trip.dropoffMatchPoint?.lat ?? 0.0;
+        final dropLng =
+            trip.closestDropoff?.lng ?? trip.dropoffMatchPoint?.lng ?? 0.0;
+        body['pickup_coordinates'] = '[$pickupLat,$pickupLng]';
+        body['destination_coordinates'] = '[$dropLat,$dropLng]';
+        break;
+    }
+
+    return body;
+  }
+
+  /// Converts a time string like "07:30:00" → "07:30"; already "07:30" stays.
+  String _trimToHHMM(String time) {
+    if (time.isEmpty) return time;
+    final parts = time.split(':');
+    if (parts.length >= 2) return '${parts[0]}:${parts[1]}';
+    return time;
   }
 
   void clearCarpoolData() {

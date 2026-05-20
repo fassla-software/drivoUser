@@ -8,8 +8,10 @@ class SearchTripeDetailsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      spacing: Dimensions.paddingSizeSmall,
+      runSpacing: Dimensions.paddingSizeExtraSmall,
       children: [
         _defaultImageAndIcon(
           context,
@@ -18,8 +20,13 @@ class SearchTripeDetailsWidget extends StatelessWidget {
         ),
         _defaultImageAndIcon(
           context,
-          imagePath: Images.userIcon,
+          imagePath: Images.windIcon,
           name: 'مكيف',
+        ),
+        _defaultImageAndIcon(
+          context,
+          imagePath: Images.audioIcon,
+          name: 'شاشة ترفيه',
         ),
         _defaultImageAndIcon(
           context,
