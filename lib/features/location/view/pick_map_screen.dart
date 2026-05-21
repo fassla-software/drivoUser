@@ -395,12 +395,6 @@ class _PickMapScreenState extends State<PickMapScreen> {
                                             address,
                                             widget.type,
                                           );
-
-                                          if (mounted) {
-                                            Navigator.pop(
-                                              context,
-                                            );
-                                          }
                                         }
 
                                       } else {

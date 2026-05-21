@@ -16,13 +16,14 @@ class ProfileRepository implements ProfileRepositoryInterface{
   }
 
   @override
-  Future<Response?> updateProfileInfo(String firstName, String lastname, String identification, String idType, XFile? profile, List<MultipartBody>? identityImage) async {
+  Future<Response?> updateProfileInfo(String firstName, String lastname, String identification, String idType, String? gender, XFile? profile, List<MultipartBody>? identityImage) async {
     Map<String, String> fields = <String, String> {
       '_method': 'put',
       'first_name': firstName,
       'last_name': lastname,
       "identification_number" : identification,
-      "identification_type" : idType
+      "identification_type" : idType,
+      if(gender != null && gender.isNotEmpty) 'gender': gender,
     };
     List<MultipartBody> multipartList = [];
     for(int i =0; i< Get.find<ProfileController>().identityImages.length; i++){

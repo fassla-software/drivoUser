@@ -11,6 +11,7 @@ class ProfileController extends GetxController implements GetxService {
   ProfileController({required this.profileServiceInterface});
 
   final List<String> _identityTypeList = ['passport', 'driving_license', 'nid'];
+  final List<String> _genderList = ['male', 'female'];
   XFile? _pickedProfileFile;
   List<MultipartBody> multipartList = [];
   XFile? _pickedIdentityImageFront;
@@ -18,6 +19,7 @@ class ProfileController extends GetxController implements GetxService {
   XFile? _pickedIdentityImageBack;
   bool isLoading = false;
   String _identityType = '';
+  String? _selectedGender;
   ProfileModel? profileModel;
   bool isUpdating = false;
 
@@ -26,7 +28,9 @@ class ProfileController extends GetxController implements GetxService {
   XFile? get pickedIdentityImageBack => _pickedIdentityImageBack;
   List<XFile> identityImages = [];
   List<String> get identityTypeList => _identityTypeList;
+  List<String> get genderList => _genderList;
   String get identityType => _identityType;
+  String? get selectedGender => _selectedGender;
 
   void setIdentityType (String setValue, {bool notify = true}) {
     if(setValue.isEmpty) {
@@ -34,6 +38,13 @@ class ProfileController extends GetxController implements GetxService {
     }else {
       _identityType = setValue;
     }
+    if(notify) {
+      update();
+    }
+  }
+
+  void setGender(String? value, {bool notify = true}) {
+    _selectedGender = value;
     if(notify) {
       update();
     }
@@ -88,11 +99,11 @@ class ProfileController extends GetxController implements GetxService {
     return response;
   }
 
-  Future<Response> updateProfile( String firstName, String lastName,String identityType,String idNumber) async {
+  Future<Response> updateProfile( String firstName, String lastName,String identityType,String idNumber, String? gender) async {
     isUpdating = true;
     update();
     Response? response = await profileServiceInterface.updateProfileInfo(
-      firstName, lastName, idNumber, identityType, _pickedProfileFile, multipartList,
+      firstName, lastName, idNumber, identityType, gender, _pickedProfileFile, multipartList,
     );
     if(response!.statusCode == 200){
       Get.back();

@@ -13,8 +13,8 @@ class ProfileService implements ProfileServiceInterface{
   }
 
   @override
-  Future updateProfileInfo(String firstName, String lastname, String identification, String idType, XFile? profile, List<MultipartBody>? identityImage) async{
-    return await profileRepositoryInterface.updateProfileInfo(firstName, lastname, identification, idType, profile, identityImage);
+  Future updateProfileInfo(String firstName, String lastname, String identification, String idType, String? gender, XFile? profile, List<MultipartBody>? identityImage) async{
+    return await profileRepositoryInterface.updateProfileInfo(firstName, lastname, identification, idType, gender, profile, identityImage);
   }
 
 }

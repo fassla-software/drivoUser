@@ -52,6 +52,11 @@ class _EditProfileAccountInfoState extends State<EditProfileAccountInfo> {
     }else {
       Get.find<ProfileController>().setIdentityType(Get.find<ProfileController>().identityTypeList[0], notify: false);
     }
+    // Initialize gender from profile model (null if not set)
+    Get.find<ProfileController>().setGender(
+      Get.find<ProfileController>().profileModel!.data?.gender,
+      notify: false,
+    );
   }
 
   @override
@@ -95,6 +100,37 @@ class _EditProfileAccountInfoState extends State<EditProfileAccountInfo> {
               showBorder: false,
               hintText: 'enter_your_phone'.tr,
               fillColor: Theme.of(context).hintColor.withOpacity(.15),
+            ),
+
+            TextFieldTitle(title: 'gender'.tr, textOpacity: 0.8),
+
+            Container(
+              height: 50,
+              padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(width: 0.5, color: Theme.of(context).hintColor.withOpacity(0.7)),
+              ),
+              child: DropdownButton<String>(
+                hint: Text(
+                  'select_gender'.tr,
+                  style: textRegular.copyWith(color: Theme.of(context).hintColor),
+                ),
+                value: profileController.selectedGender,
+                items: profileController.genderList.map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(
+                      value.tr,
+                      style: textRegular.copyWith(color: Theme.of(context).textTheme.bodyMedium!.color),
+                    ),
+                  );
+                }).toList(),
+                onChanged: (val) => profileController.setGender(val),
+                isExpanded: true,
+                underline: const SizedBox(),
+              ),
             ),
 
             TextFieldTitle(title: 'identity_type'.tr,textOpacity: 0.8),
@@ -276,6 +312,7 @@ class _EditProfileAccountInfoState extends State<EditProfileAccountInfo> {
             }else{
               Response response = await profileController.updateProfile(
                 firstNameController.text, lastNameController.text, profileController.identityType, idNumberController.text,
+                profileController.selectedGender,
               );
               if(response.statusCode == 200) {
                 showCustomSnackBar('profile_updated_successfully'.tr, isError: false);

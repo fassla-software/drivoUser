@@ -16,7 +16,6 @@ import 'package:ride_sharing_user_app/features/ride/controllers/ride_controller.
 import 'package:ride_sharing_user_app/features/search_trips/screens/search_trips_screen.dart';
 import 'package:ride_sharing_user_app/features/splash/controllers/config_controller.dart';
 import 'package:ride_sharing_user_app/features/trip/screens/trip_screen.dart';
-import 'package:ride_sharing_user_app/features/trip/screens/tripe_screen.dart';
 import 'package:ride_sharing_user_app/helper/display_helper.dart';
 import 'package:ride_sharing_user_app/helper/route_helper.dart';
 import 'package:ride_sharing_user_app/localization/localization_controller.dart';

@@ -6,13 +6,12 @@ class TripModel {
   String? offset;
   List<TripDetails>? data;
 
-  TripModel(
-      {
-        this.totalSize,
-        this.limit,
-        this.offset,
-        this.data,
-        });
+  TripModel({
+    this.totalSize,
+    this.limit,
+    this.offset,
+    this.data,
+  });
 
   TripModel.fromJson(Map<String, dynamic> json) {
     totalSize = json['total_size'];
@@ -24,8 +23,12 @@ class TripModel {
         data!.add(TripDetails.fromJson(v));
       });
     }
-
   }
-
+  List<TripDetails> get carpoolRides =>
+      data!.where((element) => element.type == 'carpool').toList();
+  List<TripDetails> get parcelRides =>
+      data!.where((element) => element.type == 'parcel').toList();
+  List<TripDetails> get normalRides => data!
+      .where((element) => element.type != 'carpool' && element.type != 'parcel')
+      .toList();
 }
-

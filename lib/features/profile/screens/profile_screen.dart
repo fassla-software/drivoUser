@@ -19,7 +19,6 @@ import 'package:ride_sharing_user_app/features/settings/screens/setting_screen.d
 import 'package:ride_sharing_user_app/features/splash/controllers/config_controller.dart';
 import 'package:ride_sharing_user_app/features/support/screens/support_screen.dart';
 import 'package:ride_sharing_user_app/features/trip/screens/trip_screen.dart';
-import 'package:ride_sharing_user_app/features/trip/screens/tripe_screen.dart';
 import 'package:ride_sharing_user_app/features/wallet/screens/wallet_screen.dart';
 import 'package:ride_sharing_user_app/util/app_constants.dart';
 import 'package:ride_sharing_user_app/util/dimensions.dart';

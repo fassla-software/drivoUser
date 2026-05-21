@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:ride_sharing_user_app/features/auth/domain/enums/refund_status_enum.dart';
 
 class TripDetailsModel {
@@ -25,6 +26,7 @@ class TripDetails {
   double? actualFare;
   double? discountActualFare;
   String? actualTime;
+  String? carpoolType; //trip,north_coast,travel,routine
   String? actualDistance;
   String? waitingTime;
   String? idleTime;
@@ -132,6 +134,57 @@ class TripDetails {
       this.isCarpool,
       this.distanceText});
 
+  //time in hh:mm from 2026-05-25T03:00:00.000000Z
+  // 1. Getter لجلب التاريخ بصيغة yyyy-MM-dd
+  String get formattedDate {
+    if (createdAt == null || createdAt!.isEmpty) return '';
+    try {
+      final parsedDate = DateTime.parse(createdAt!).toLocal();
+      return DateFormat('yyyy-MM-dd').format(parsedDate);
+    } catch (e) {
+      return ''; // معالجة آمنة في حال كان التنسيق القادم من السيرفر خاطئاً
+    }
+  }
+
+// 2. Getter لجلب الوقت بصيغة HH:mm (24 ساعة)
+  String get formattedTime {
+    if (createdAt == null || createdAt!.isEmpty) return '';
+    try {
+      final parsedDate = DateTime.parse(createdAt!).toLocal();
+      return DateFormat('HH:mm').format(parsedDate);
+    } catch (e) {
+      return '';
+    }
+  }
+
+  String get driverRating {
+    if (driverAvgRating == null || (driverAvgRating?.isEmpty ?? true)) {
+      return 'N/A';
+    }
+    try {
+      final parsedRating = double.parse(driverAvgRating ?? '0');
+      return parsedRating.toStringAsFixed(1); // أو asFixed(2) حسب الرغبة
+    } catch (e) {
+      return ''; // في حال كان التنسيق غير صحيح
+    }
+  }
+
+  String get carpoolTypeString {
+    if (type == 'carpool') {
+      //only first char is uppercase and capitalize rest of the letters
+      final carpoolTtype = carpoolType ?? '';
+      return carpoolTtype
+          .trim() // إزالة المسافات الزائدة من البداية والنهاية
+          .replaceAll('_', ' ')
+          .split(' ')
+          .where((e) =>
+              e.isNotEmpty) // فلترة وإلغاء أي عناصر فارغة لتجنب الـ RangeError
+          .map((e) => e[0].toUpperCase() + e.substring(1).toLowerCase())
+          .join(' ');
+    }
+    return '';
+  }
+
   TripDetails.fromJson(Map<String, dynamic> json) {
     print('=== TripDetails.fromJson called ===');
     print('JSON keys: ${json.keys.toList()}');
@@ -219,6 +272,7 @@ class TripDetails {
       pickupCoordinates = json['pickup_coordinates'] != null
           ? PickupCoordinates.fromJson(json['pickup_coordinates'])
           : null;
+      carpoolType = json['carpool_type'];
       pickupAddress = json['pickup_address'];
       destinationCoordinates = json['destination_coordinates'] != null
           ? PickupCoordinates.fromJson(json['destination_coordinates'])
