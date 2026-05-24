@@ -40,53 +40,54 @@ class ActivityScreenRiderDetails extends StatelessWidget {
               const SizedBox(
                 width: Dimensions.paddingSizeSmall,
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  rideController.tripDetails?.driver != null
-                      ? SizedBox(
-                          width: 100,
-                          child: Text(
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    rideController.tripDetails?.driver != null
+                        ? Text(
                             '${rideController.tripDetails!.driver!.firstName!} ${rideController.tripDetails!.driver!.lastName!}',
                             style: textMedium.copyWith(
                                 fontSize: Dimensions.fontSizeLarge,
                                 color: Theme.of(context).primaryColorDark),
                             overflow: TextOverflow.ellipsis,
-                          ),
-                        )
-                      : const SizedBox(),
-                  Text.rich(TextSpan(
-                    style: textRegular.copyWith(
-                      fontSize: Dimensions.fontSizeLarge,
-                      color: Theme.of(context)
-                          .textTheme
-                          .bodyMedium!
-                          .color!
-                          .withOpacity(0.8),
-                    ),
-                    children: [
-                      WidgetSpan(
-                          child: Icon(
-                            Icons.star,
-                            color:
-                                Theme.of(context).colorScheme.primaryContainer,
-                            size: 15,
-                          ),
-                          alignment: PlaceholderAlignment.middle),
-                      TextSpan(
-                          text: ratting,
-                          style: textRegular.copyWith(
-                              fontSize: Dimensions.fontSizeDefault)),
-                    ],
-                  )),
-                ],
+                            maxLines: 1,
+                          )
+                        : const SizedBox(),
+                    Text.rich(TextSpan(
+                      style: textRegular.copyWith(
+                        fontSize: Dimensions.fontSizeLarge,
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodyMedium!
+                            .color!
+                            .withValues(alpha: 0.8),
+                      ),
+                      children: [
+                        WidgetSpan(
+                            child: Icon(
+                              Icons.star,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer,
+                              size: 15,
+                            ),
+                            alignment: PlaceholderAlignment.middle),
+                        TextSpan(
+                            text: ratting,
+                            style: textRegular.copyWith(
+                                fontSize: Dimensions.fontSizeDefault)),
+                      ],
+                    )),
+                  ],
+                ),
               ),
               Container(
                   width: 1,
                   height: 25,
-                  color: Theme.of(context).hintColor.withOpacity(0.25),
+                  color: Theme.of(context).hintColor.withValues(alpha: 0.25),
                   margin: const EdgeInsets.symmetric(
-                      horizontal: Dimensions.paddingSizeExtraLarge)),
+                      horizontal: Dimensions.paddingSizeDefault)),
               ContactWidget(
                 driverId: rideController.tripDetails?.driver?.id ?? '0',
               ),

@@ -322,18 +322,21 @@ class MapController extends GetxController implements GetxService {
   Future<void> zoomToFit(GoogleMapController? controller, LatLngBounds? bounds,
       LatLng centerBounds, double bearing,
       {double padding = 0.5}) async {
+    if (controller == null || bounds == null) return;
+
     bool keepZoomingOut = true;
     const double minZoomLevel =
         8.0; // Allow manual zooming while preventing excessive auto zoom out
 
     while (keepZoomingOut) {
-      final LatLngBounds screenBounds = await controller!.getVisibleRegion();
-      if (fits(bounds!, screenBounds)) {
+      final LatLngBounds screenBounds = await controller.getVisibleRegion();
+      if (fits(bounds, screenBounds)) {
         keepZoomingOut = false;
         final double currentZoom = await controller.getZoomLevel();
         final double zoomLevel =
             (currentZoom - padding).clamp(minZoomLevel, 20.0);
-        controller.moveCamera(CameraUpdate.newCameraPosition(CameraPosition(
+        await controller
+            .moveCamera(CameraUpdate.newCameraPosition(CameraPosition(
           target: centerBounds,
           zoom: zoomLevel,
           bearing: bearing,
@@ -342,8 +345,13 @@ class MapController extends GetxController implements GetxService {
       } else {
         // Zooming out by 0.1 zoom level per iteration
         final double currentZoom = await controller.getZoomLevel();
+        if (currentZoom <= minZoomLevel) {
+          keepZoomingOut = false;
+          break;
+        }
         final double zoomLevel = (currentZoom - 0.1).clamp(minZoomLevel, 20.0);
-        controller.moveCamera(CameraUpdate.newCameraPosition(CameraPosition(
+        await controller
+            .moveCamera(CameraUpdate.newCameraPosition(CameraPosition(
           target: centerBounds,
           zoom: zoomLevel,
         )));

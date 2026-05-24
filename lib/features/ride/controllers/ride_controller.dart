@@ -1356,18 +1356,14 @@ class RideController extends GetxController implements GetxService {
                     .toList(),
                 proration: proration,
               ));
-        } else {
           // Payment not required — go to dashboard
           Get.offAll(() => const DashboardScreen());
-          Get.snackbar(
-            'Success!',
-            'Your carpool ride request has been submitted successfully!',
-            backgroundColor: Colors.green,
-            colorText: Colors.white,
-            icon: const Icon(Icons.check_circle, color: Colors.white),
-            duration: const Duration(seconds: 3),
-            snackPosition: SnackPosition.TOP,
-          );
+          Future.delayed(const Duration(milliseconds: 300), () {
+            showCustomSnackBar(
+              'Your carpool ride request has been submitted successfully!',
+              isError: false,
+            );
+          });
         }
       } else {
         ApiChecker.checkApi(response);
@@ -1379,14 +1375,8 @@ class RideController extends GetxController implements GetxService {
       }
 
       // Show error snackbar
-      Get.snackbar(
-        'Error',
+      showCustomSnackBar(
         'Failed to submit ride request: ${e.toString()}',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        icon: const Icon(Icons.error, color: Colors.white),
-        duration: const Duration(seconds: 3),
-        snackPosition: SnackPosition.TOP,
       );
     } finally {
       isLoading = false;
@@ -1412,14 +1402,8 @@ class RideController extends GetxController implements GetxService {
         return false;
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
+      showCustomSnackBar(
         'Failed to submit payment verification: ${e.toString()}',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        icon: const Icon(Icons.error, color: Colors.white),
-        duration: const Duration(seconds: 3),
-        snackPosition: SnackPosition.TOP,
       );
       return false;
     } finally {

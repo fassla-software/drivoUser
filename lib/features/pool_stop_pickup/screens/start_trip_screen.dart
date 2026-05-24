@@ -10,6 +10,7 @@ import 'package:ride_sharing_user_app/theme/theme_controller.dart';
 import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/util/images.dart';
 import 'package:ride_sharing_user_app/util/styles.dart';
+import 'package:ride_sharing_user_app/helper/display_helper.dart';
 import 'dart:async';
 import 'dart:ui' as ui;
 import 'dart:typed_data';
@@ -260,12 +261,11 @@ class _StartTripScreenState extends State<StartTripScreen> {
     }
 
     // Show success message and navigate to detailed trip view after a delay
-    Get.snackbar(
+    showCustomSnackBar(
       'بدأت الرحلة!',
-      'تم بدء الرحلة بنجاح. يمكنك متابعة التفاصيل الكاملة.',
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
-      duration: const Duration(seconds: 2),
+      subMessage: 'تم بدء الرحلة بنجاح. يمكنك متابعة التفاصيل الكاملة.',
+      isError: false,
+      seconds: 2,
     );
 
     // Navigate to detailed trip view after 3 seconds

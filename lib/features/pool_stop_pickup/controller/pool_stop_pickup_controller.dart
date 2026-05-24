@@ -12,6 +12,7 @@ import 'package:ride_sharing_user_app/features/pool_stop_pickup/domain/models/jo
 import 'package:ride_sharing_user_app/features/pool_stop_pickup/domain/models/boarding_point_model.dart';
 
 import 'package:ride_sharing_user_app/localization/localization_controller.dart';
+import 'package:ride_sharing_user_app/helper/display_helper.dart';
 
 class PoolStopPickupController extends GetxController implements GetxService {
   final PoolService poolService;
@@ -174,20 +175,18 @@ class PoolStopPickupController extends GetxController implements GetxService {
   Future<void> searchAvailableTrips() async {
     if (selectedCarpoolType == 'travel') {
       if (selectedBoardingPointStart == null || selectedBoardingPointEnd == null) {
-        Get.snackbar(
-            'Error', 'Please select both start and end boarding points');
+        showCustomSnackBar('Please select both start and end boarding points');
         return;
       }
     } else {
       if (pickupAddress == null || destinationAddress == null) {
-        Get.snackbar(
-            'Error', 'Please select both pickup and destination locations');
+        showCustomSnackBar('Please select both pickup and destination locations');
         return;
       }
     }
 
     if (selectedDate.isEmpty) {
-      Get.snackbar('Error', 'Please select a date');
+      showCustomSnackBar('Please select a date');
       return;
     }
 
@@ -228,19 +227,21 @@ class PoolStopPickupController extends GetxController implements GetxService {
         update();
 
         if (availableTrips.isEmpty) {
-          Get.snackbar('No Rides Found', 'Try different route or date');
+          showCustomSnackBar(
+            'No Rides Found',
+            subMessage: 'Try different route or date',
+            isError: false,
+          );
         } else {
           print('Found ${availableTrips.length} rides successfully');
         }
       } else {
         availableTrips.clear();
-        Get.snackbar(
-            'Error', response?.message ?? 'Failed to search for trips');
+        showCustomSnackBar(response?.message ?? 'Failed to search for trips');
       }
     } catch (e) {
       availableTrips.clear();
-      Get.snackbar(
-          'Error', 'Failed to search for trips: ${e.toString()}');
+      showCustomSnackBar('Failed to search for trips: ${e.toString()}');
     } finally {
       _isSearchingTrips = false;
       update();
@@ -250,7 +251,7 @@ class PoolStopPickupController extends GetxController implements GetxService {
   Future<String?> joinRide(PoolRide poolRide) async {
     if (selectedCarpoolType != 'travel') {
       if (pickupAddress == null || destinationAddress == null) {
-        Get.snackbar('Error', 'Pickup and destination addresses are required');
+        showCustomSnackBar('Pickup and destination addresses are required');
         return null;
       }
     }
@@ -287,37 +288,20 @@ class PoolStopPickupController extends GetxController implements GetxService {
         if (response.statusCode == 200 && response.body['data'] != null) {
           final tripId = response.body['data']['id']?.toString();
           if (tripId != null && tripId.isNotEmpty) {
-            Get.snackbar(
-              'Success',
+            showCustomSnackBar(
               'Join request sent successfully! The driver will be notified.',
-              backgroundColor: Colors.green,
-              colorText: Colors.white,
+              isError: false,
             );
             return tripId;
           }
         }
 
-        Get.snackbar(
-          'Error',
-          'Failed to create trip. Please try again.',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
+        showCustomSnackBar('Failed to create trip. Please try again.');
       } else {
-        Get.snackbar(
-          'Error',
-          'Failed to send join request. Please try again.',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
+        showCustomSnackBar('Failed to send join request. Please try again.');
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to join ride: ${e.toString()}',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      showCustomSnackBar('Failed to join ride: ${e.toString()}');
     } finally {
       _joiningRouteIds.remove(poolRide.routeId);
       update();

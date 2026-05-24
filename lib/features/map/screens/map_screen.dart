@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -199,6 +201,12 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                       padding: EdgeInsets.only(
                           bottom: mapController.sheetHeight - 0),
                       child: GoogleMap(
+                          gestureRecognizers: <Factory<
+                              OneSequenceGestureRecognizer>>{
+                            Factory<OneSequenceGestureRecognizer>(
+                              () => EagerGestureRecognizer(),
+                            ),
+                          },
                           style: Get.isDarkMode
                               ? Get.find<ThemeController>().darkMap
                               : Get.find<ThemeController>().lightMap,
@@ -259,72 +267,68 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                     ),
                     if (widget.isShowCurrentPosition)
                       Positioned(
-  bottom: mapController.sheetHeight + 20,
-  right: 16,
-  child: Align(
-    alignment: Alignment.bottomRight,
-    child: GetBuilder<LocationController>(
-      builder: (locationController) {
-        return CustomIconCard(
-          index: 5,
-          icon: Images.currentLocation,
-          iconColor: Theme.of(context).primaryColor,
-          onTap: () async {
-            await locationController.getCurrentLocation(
-              mapController: _mapController,
-            );
+                        bottom: mapController.sheetHeight + 20,
+                        right: 16,
+                        child: Align(
+                          alignment: Alignment.bottomRight,
+                          child: GetBuilder<LocationController>(
+                            builder: (locationController) {
+                              return CustomIconCard(
+                                index: 5,
+                                icon: Images.currentLocation,
+                                iconColor: Theme.of(context).primaryColor,
+                                onTap: () async {
+                                  await locationController.getCurrentLocation(
+                                    mapController: _mapController,
+                                  );
 
-            await _mapController?.moveCamera(
-              CameraUpdate.newCameraPosition(
-                CameraPosition(
-                  target:
-                      Get.find<LocationController>().initialPosition,
-                  zoom: 16,
-                ),
-              ),
-            );
-          },
-        );
-      },
-    ),
-  ),
-),
-
-Positioned(
-  bottom: mapController.sheetHeight + 90,
-  right: 16,
-  child: Align(
-    alignment: Alignment.bottomRight,
-    child: CustomIconCard(
-      icon: mapController.isTrafficEnable
-          ? Images.trafficOnlineIcon
-          : Images.trafficOfflineIcon,
-      iconColor: mapController.isTrafficEnable
-          ? Theme.of(context)
-              .colorScheme
-              .secondaryContainer
-          : Theme.of(context).hintColor,
-      index: 2,
-      onTap: () => mapController.toggleTrafficView(),
-    ),
-  ),
-),
-
-Positioned(
-  bottom: mapController.sheetHeight + 160,
-  right: 16,
-  child: Align(
-    alignment: Alignment.bottomRight,
-    child: CustomIconCard(
-      icon: Images.offerMapIcon,
-      iconColor:
-          Theme.of(context).colorScheme.inverseSurface,
-      index: 2,
-      onTap: () {
-        Get.bottomSheet(
-          const DiscountAndCouponBottomSheet(),
-          backgroundColor: Theme.of(context).cardColor,
-          isDismissible: false,
+                                  await _mapController?.moveCamera(
+                                    CameraUpdate.newCameraPosition(
+                                      CameraPosition(
+                                        target: Get.find<LocationController>()
+                                            .initialPosition,
+                                        zoom: 16,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    Positioned(
+                      bottom: mapController.sheetHeight + 90,
+                      right: 16,
+                      child: Align(
+                        alignment: Alignment.bottomRight,
+                        child: CustomIconCard(
+                          icon: mapController.isTrafficEnable
+                              ? Images.trafficOnlineIcon
+                              : Images.trafficOfflineIcon,
+                          iconColor: mapController.isTrafficEnable
+                              ? Theme.of(context).colorScheme.secondaryContainer
+                              : Theme.of(context).hintColor,
+                          index: 2,
+                          onTap: () => mapController.toggleTrafficView(),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                        bottom: mapController.sheetHeight + 160,
+                        right: 16,
+                        child: Align(
+                            alignment: Alignment.bottomRight,
+                            child: CustomIconCard(
+                              icon: Images.offerMapIcon,
+                              iconColor:
+                                  Theme.of(context).colorScheme.inverseSurface,
+                              index: 2,
+                              onTap: () {
+                                Get.bottomSheet(
+                                  const DiscountAndCouponBottomSheet(),
+                                  backgroundColor: Theme.of(context).cardColor,
+                                  isDismissible: false,
                                 );
                               },
                             ))),

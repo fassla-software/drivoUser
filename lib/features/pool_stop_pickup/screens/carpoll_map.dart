@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -214,6 +216,11 @@ class _MapScreen2State extends State<CarpollMap> with WidgetsBindingObserver {
                       padding: EdgeInsets.only(
                           bottom: mapController.sheetHeight - 20),
                       child: GoogleMap(
+                          gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
+                            Factory<OneSequenceGestureRecognizer>(
+                              () => EagerGestureRecognizer(),
+                            ),
+                          },
                           style: Get.isDarkMode
                               ? Get.find<ThemeController>().darkMap
                               : Get.find<ThemeController>().lightMap,

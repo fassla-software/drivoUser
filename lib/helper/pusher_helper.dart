@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dart_pusher_channels/dart_pusher_channels.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:ride_sharing_user_app/features/auth/controllers/auth_controller.dart';
 import 'package:ride_sharing_user_app/features/dashboard/screens/dashboard_screen.dart';
@@ -103,7 +104,9 @@ class PusherHelper {
         pusherDriverAccepted
             .bind("driver-trip-accepted.$tripId")
             .listen((event) {
-          Get.back();
+          if (Get.isDialogOpen == true) {
+            Navigator.pop(Get.context!);
+          }
           Get.find<RideController>()
               .getRideDetails(jsonDecode(event.data!)['id'])
               .then((value) {

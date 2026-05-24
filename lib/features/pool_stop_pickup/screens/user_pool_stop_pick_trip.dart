@@ -8,6 +8,7 @@ import 'package:ride_sharing_user_app/theme/theme_controller.dart';
 import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/util/images.dart';
 import 'package:ride_sharing_user_app/util/styles.dart';
+import 'package:ride_sharing_user_app/helper/display_helper.dart';
 import 'dart:async';
 import 'dart:ui' as ui;
 import 'dart:typed_data';
@@ -775,11 +776,10 @@ class _UserPoolStopPickTripState extends State<UserPoolStopPickTrip> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                Get.snackbar(
+                showCustomSnackBar(
                   'تم الإلغاء',
-                  'تم إلغاء الرحلة بنجاح',
-                  backgroundColor: Colors.orange,
-                  colorText: Colors.white,
+                  subMessage: 'تم إلغاء الرحلة بنجاح',
+                  isError: false,
                 );
                 Get.back();
               },

@@ -86,7 +86,7 @@ class _SetDestinationScreenState extends State<SetDestinationScreen> {
         title: 'select_location'.tr,
         onBackPressed: () {
           if (Navigator.canPop(context)) {
-            Get.back();
+            Navigator.pop(context);
           } else {
             Get.offAll(() => const DashboardScreen());
           }

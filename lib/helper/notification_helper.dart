@@ -84,7 +84,9 @@ class NotificationHelper {
             Get.find<ConfigController>().pusherConnectionStatus ==
                 'Disconnected') {
           if (message.data['action'] == 'driver_assigned') {
-            Get.back();
+            if (Get.isDialogOpen == true) {
+              Navigator.pop(Get.context!);
+            }
             Get.find<RideController>()
                 .getRideDetails(message.data['ride_request_id'])
                 .then((value) {
@@ -107,7 +109,9 @@ class NotificationHelper {
               }
             });
           } else if (message.data['action'] == "carpo") {
-            Get.back();
+            if (Get.isDialogOpen == true) {
+              Navigator.pop(Get.context!);
+            }
             Get.find<RideController>()
                 .getRideDetails(message.data['ride_request_id'])
                 .then((value) {
@@ -232,9 +236,9 @@ class NotificationHelper {
                 .getBiddingList(message.data['ride_request_id'], 1)
                 .then((value) {
               if (value?.statusCode == 200) {
-                Get.find<RideController>().biddingList.length != 1
-                    ? Get.back()
-                    : null;
+                if (Get.find<RideController>().biddingList.length != 1 && Get.isDialogOpen == true) {
+                  Navigator.pop(Get.context!);
+                }
 
                 Get.dialog(
                     barrierDismissible: true,
@@ -262,8 +266,8 @@ class NotificationHelper {
                 .then((value) {
               if (value?.statusCode == 200) {
                 if (Get.find<RideController>().biddingList.isEmpty &&
-                    Get.isDialogOpen!) {
-                  Get.back();
+                    Get.isDialogOpen == true) {
+                  Navigator.pop(Get.context!);
                 }
               }
             });
@@ -285,9 +289,9 @@ class NotificationHelper {
                 .getBiddingList(message.data['ride_request_id'], 1)
                 .then((value) {
               if (value?.statusCode == 200) {
-                Get.find<RideController>().biddingList.length != 1
-                    ? Get.back()
-                    : null;
+                if (Get.find<RideController>().biddingList.length != 1 && Get.isDialogOpen == true) {
+                  Navigator.pop(Get.context!);
+                }
                 Get.dialog(
                     barrierDismissible: true,
                     barrierColor: Colors.black.withOpacity(0.5),
@@ -694,6 +698,7 @@ class NotificationHelper {
   }
 }
 
+@pragma('vm:entry-point')
 Future<dynamic> myBackgroundMessageHandler(RemoteMessage remoteMessage) async {
   customPrint('onBackground: ${remoteMessage.data}');
   // var androidInitialize = new AndroidInitializationSettings('notification_icon');
@@ -704,6 +709,7 @@ Future<dynamic> myBackgroundMessageHandler(RemoteMessage remoteMessage) async {
   // NotificationHelper.showNotification(message, flutterLocalNotificationsPlugin, true);
 }
 
+@pragma('vm:entry-point')
 Future<dynamic> myBackgroundMessageReceiver(
     NotificationResponse response) async {
   customPrint('onBackgroundClicked: ${response.payload}');

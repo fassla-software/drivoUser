@@ -9,6 +9,7 @@ import 'package:ride_sharing_user_app/helper/price_converter.dart';
 import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/util/styles.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:ride_sharing_user_app/features/location/controllers/location_controller.dart';
 
 /// Trip details card matching the carpool design (black card, driver, route, summary).
 class CarpoolTripDetailsCard extends StatelessWidget {
@@ -48,6 +49,12 @@ class CarpoolTripDetailsCard extends StatelessWidget {
             _carDetailsSection(context, vehicle),
             const SizedBox(height: Dimensions.paddingSizeDefault),
           ],
+          // if (tripDetails.otp != null &&
+          //     tripDetails.otp!.isNotEmpty &&
+          //     status == 'accepted') ...[
+          //   _otpSection(context),
+          //   const SizedBox(height: Dimensions.paddingSizeDefault),
+          // ],
           _metaRow(context, seats),
           const SizedBox(height: Dimensions.paddingSizeDefault),
           _routeSection(context),
@@ -243,30 +250,83 @@ class CarpoolTripDetailsCard extends StatelessWidget {
         : '—';
     final timeText = createdAt != null && createdAt.isNotEmpty
         ? DateConverter.isoDateTimeStringToLocalTime(createdAt)
-        : (tripDetails.estimatedTime?.isNotEmpty == true
-            ? tripDetails.estimatedTime!
-            : '—');
+        : '—';
+    final durationText = tripDetails.estimatedTime?.isNotEmpty == true
+        ? tripDetails.estimatedTime!
+        : '';
 
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: _metaItem(
-            icon: Icons.calendar_today_outlined,
-            label: dateText,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: _metaItem(
+                icon: Icons.calendar_today_outlined,
+                label: dateText,
+              ),
+            ),
+            Expanded(
+              child: _metaItem(
+                icon: Icons.access_time,
+                label: timeText,
+              ),
+            ),
+            Expanded(
+              child: _metaItem(
+                icon: Icons.people_outline,
+                label: '$seats ${'seats'.tr}',
+              ),
+            ),
+          ],
         ),
-        Expanded(
-          child: _metaItem(
-            icon: Icons.access_time,
-            label: timeText,
+        if (durationText.isNotEmpty) ...[
+          const SizedBox(height: Dimensions.paddingSizeSmall),
+          Row(
+            children: [
+              Expanded(
+                child: _metaItem(
+                  icon: Icons.timer_outlined,
+                  label: '${'estimated_time'.tr}: $durationText',
+                ),
+              ),
+            ],
           ),
-        ),
-        Expanded(
-          child: _metaItem(
-            icon: Icons.people_outline,
-            label: '$seats ${'seats'.tr}',
+        ],
+        if (timeText != '—') ...[
+          const SizedBox(height: Dimensions.paddingSizeSmall),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+              horizontal: Dimensions.paddingSizeDefault,
+              vertical: Dimensions.paddingSizeSmall,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white.withOpacity(0.12)),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  color: Colors.white.withOpacity(0.8),
+                  size: 16,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'The driver will meet you at this point at $timeText.'.tr,
+                    style: textRegular.copyWith(
+                      color: Colors.white.withOpacity(0.85),
+                      fontSize: Dimensions.fontSizeSmall,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -293,53 +353,146 @@ class CarpoolTripDetailsCard extends StatelessWidget {
   }
 
   Widget _routeSection(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Column(
+    return Material(
+      color: Colors.transparent,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.location_on_outlined,
-                size: 18, color: Colors.white.withOpacity(0.9)),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: CustomPaint(
-                size: const Size(2, 36),
-                painter: _DottedLinePainter(color: Colors.white38),
+            Column(
+              children: [
+                Icon(Icons.location_on_outlined,
+                    size: 18, color: Colors.white.withOpacity(0.9)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: CustomPaint(
+                    size: const Size(2, 36),
+                    painter: _DottedLinePainter(color: Colors.white38),
+                  ),
+                ),
+                Icon(Icons.flag_outlined,
+                    size: 18, color: Colors.white.withOpacity(0.9)),
+              ],
+            ),
+            const SizedBox(width: Dimensions.paddingSizeSmall),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  GestureDetector(
+                    onTap: _openMapApp,
+                    child: Text(
+                      tripDetails.pickupAddress ?? '—',
+                      style: textRegular.copyWith(
+                        color: Colors.white,
+                        fontSize: Dimensions.fontSizeSmall,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  Text(
+                    tripDetails.destinationAddress ?? '—',
+                    style: textRegular.copyWith(
+                      color: Colors.white,
+                      fontSize: Dimensions.fontSizeSmall,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
             ),
-            Icon(Icons.flag_outlined,
-                size: 18, color: Colors.white.withOpacity(0.9)),
           ],
         ),
-        const SizedBox(width: Dimensions.paddingSizeSmall),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                tripDetails.pickupAddress ?? '—',
-                style: textRegular.copyWith(
-                  color: Colors.white,
-                  fontSize: Dimensions.fontSizeSmall,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 28),
-              Text(
-                tripDetails.destinationAddress ?? '—',
-                style: textRegular.copyWith(
-                  color: Colors.white,
-                  fontSize: Dimensions.fontSizeSmall,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-      ],
+      ),
     );
+  }
+
+  Future<void> _openMapApp() async {
+    try {
+      final isCarpool =
+          tripDetails.isCarpool == true || tripDetails.type == 'carpool';
+      String url = '';
+
+      if (isCarpool) {
+        // Carpool trip: start = user's location, destination = pickup location
+        final userAddress = Get.find<LocationController>().getUserAddress();
+        final userLat = userAddress?.latitude;
+        final userLng = userAddress?.longitude;
+
+        final pickupCoords = tripDetails.pickupCoordinates?.coordinates;
+        if (pickupCoords != null && pickupCoords.length >= 2) {
+          final destLat = pickupCoords[1];
+          final destLng = pickupCoords[0];
+
+          if (userLat != null && userLng != null) {
+            url =
+                'https://www.google.com/maps/dir/?api=1&origin=$userLat,$userLng&destination=$destLat,$destLng&travelmode=driving';
+          } else {
+            // Fallback: omit origin so Google Maps uses current device location
+            url =
+                'https://www.google.com/maps/dir/?api=1&destination=$destLat,$destLng&travelmode=driving';
+          }
+        }
+      } else {
+        // Normal trip: start = start location (pickup), destination = destination location
+        final pickupCoords = tripDetails.pickupCoordinates?.coordinates;
+        final destCoords = tripDetails.destinationCoordinates?.coordinates;
+
+        if (pickupCoords != null &&
+            pickupCoords.length >= 2 &&
+            destCoords != null &&
+            destCoords.length >= 2) {
+          final startLat = pickupCoords[1];
+          final startLng = pickupCoords[0];
+          final destLat = destCoords[1];
+          final destLng = destCoords[0];
+
+          url =
+              'https://www.google.com/maps/dir/?api=1&origin=$startLat,$startLng&destination=$destLat,$destLng&travelmode=driving';
+        }
+      }
+
+      if (url.isNotEmpty) {
+        final uri = Uri.parse(url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } else {
+          // Fallback to simpler map link
+          final fallbackUrl = isCarpool
+              ? 'https://maps.google.com/maps?q=${tripDetails.pickupCoordinates?.coordinates?[1]},${tripDetails.pickupCoordinates?.coordinates?[0]}'
+              : 'https://maps.google.com/maps?saddr=${tripDetails.pickupCoordinates?.coordinates?[1]},${tripDetails.pickupCoordinates?.coordinates?[0]}&daddr=${tripDetails.destinationCoordinates?.coordinates?[1]},${tripDetails.destinationCoordinates?.coordinates?[0]}';
+          final fallbackUri = Uri.parse(fallbackUrl);
+          if (await canLaunchUrl(fallbackUri)) {
+            await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
+          } else {
+            Get.snackbar(
+              'Error'.tr,
+              'Could not open Google Maps.'.tr,
+              backgroundColor: Colors.red,
+              colorText: Colors.white,
+            );
+          }
+        }
+      } else {
+        Get.snackbar(
+          'Error'.tr,
+          'Location coordinates are not available.'.tr,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error'.tr,
+        'Could not open Google Maps.'.tr,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
   }
 
   Widget _summaryBox(BuildContext context, double? fare) {
@@ -458,6 +611,88 @@ class CarpoolTripDetailsCard extends StatelessWidget {
         return Colors.black;
     }
   }
+
+  // Widget _otpSection(BuildContext context) {
+  //   final otp = tripDetails.otp ?? '';
+  //   if (otp.isEmpty) return const SizedBox.shrink();
+
+  //   return Container(
+  //     width: double.infinity,
+  //     padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+  //     decoration: BoxDecoration(
+  //       color: Colors.white.withValues(alpha: 0.06),
+  //       borderRadius: BorderRadius.circular(16),
+  //       border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+  //     ),
+  //     child: Column(
+  //       children: [
+  //         Row(
+  //           mainAxisAlignment: MainAxisAlignment.center,
+  //           children: [
+  //             Icon(
+  //               Icons.lock_outline,
+  //               color: Theme.of(context).primaryColor,
+  //               size: 18,
+  //             ),
+  //             const SizedBox(width: 8),
+  //             Text(
+  //               'OTP / PIN'.tr,
+  //               style: textSemiBold.copyWith(
+  //                 color: Colors.white,
+  //                 fontSize: Dimensions.fontSizeDefault,
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //         const SizedBox(height: Dimensions.paddingSizeSmall),
+  //         Row(
+  //           mainAxisAlignment: MainAxisAlignment.center,
+  //           children: otp.split('').map((char) {
+  //             return Container(
+  //               margin: const EdgeInsets.symmetric(horizontal: 6),
+  //               width: 46,
+  //               height: 46,
+  //               decoration: BoxDecoration(
+  //                 color: Colors.white.withValues(alpha: 0.1),
+  //                 borderRadius: BorderRadius.circular(10),
+  //                 border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+  //               ),
+  //               child: Center(
+  //                 child: Text(
+  //                   char,
+  //                   style: textBold.copyWith(
+  //                     fontSize: 22,
+  //                     color: Colors.white,
+  //                   ),
+  //                 ),
+  //               ),
+  //             );
+  //           }).toList(),
+  //         ),
+  //         const SizedBox(height: Dimensions.paddingSizeSmall),
+  //         Text.rich(
+  //           TextSpan(
+  //             style: textRegular.copyWith(
+  //               fontSize: Dimensions.fontSizeSmall,
+  //               color: Colors.white.withValues(alpha: 0.7),
+  //             ),
+  //             children: [
+  //               TextSpan(text: 'please_share_the'.tr),
+  //               TextSpan(
+  //                 text: ' OTP '.tr,
+  //                 style: textSemiBold.copyWith(
+  //                   color: Theme.of(context).primaryColor,
+  //                 ),
+  //               ),
+  //               TextSpan(text: 'with_the_driver'.tr),
+  //             ],
+  //           ),
+  //           textAlign: TextAlign.center,
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Future<void> _launchTel(String phone) async {
     final uri = Uri.parse('tel:$phone');

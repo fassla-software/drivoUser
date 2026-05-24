@@ -328,23 +328,23 @@ Future<Map<String, Map<String, String>>> init() async {
   Get.lazyPut(() => searchController);
 
 // 1. Pool Repo
-Get.lazyPut<PoolInterface>(
-  () => PoolRepository(apiClient: Get.find()),
-);
+  Get.lazyPut<PoolInterface>(
+    () => PoolRepository(apiClient: Get.find()),
+  );
 
 // 2. Pool Service
-Get.lazyPut<PoolService>(
-  () => PoolService(poolRepository: Get.find<PoolInterface>()),
-);
+  Get.lazyPut<PoolService>(
+    () => PoolService(poolRepository: Get.find<PoolInterface>()),
+  );
 
 // 3. Controllers اللي بتستخدم PoolService
-Get.lazyPut(() => PoolStopPickupController(poolService: Get.find()));
+  Get.lazyPut(() => PoolStopPickupController(poolService: Get.find()));
 
-Get.lazyPut(() => CarPollRideController(
-  rideServiceInterface: Get.find(),
-));
+  Get.lazyPut(() => CarPollRideController(
+        rideServiceInterface: Get.find(),
+      ));
 
-Get.lazyPut(() => CarpollMapController());
+  Get.lazyPut(() => CarpollMapController());
 
   // Retrieving localized data
   Map<String, Map<String, String>> languages = {};
