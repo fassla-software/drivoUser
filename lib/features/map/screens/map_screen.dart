@@ -259,6 +259,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                           markers: Set<Marker>.of(mapController.markers),
                           polylines:
                               Set<Polyline>.of(mapController.polylines.values),
+                          
                           zoomControlsEnabled: false,
                           compassEnabled: false,
                           trafficEnabled: mapController.isTrafficEnable,

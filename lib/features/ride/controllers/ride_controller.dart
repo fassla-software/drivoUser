@@ -550,7 +550,7 @@ class RideController extends GetxController implements GetxService {
       estimatedDistance = tripDetails!.estimatedDistance!.toString();
       isLoading = false;
 
-      encodedPolyLine = tripDetails!.encodedPolyline!;
+      encodedPolyLine = tripDetails?.encodedPolyline ?? '';
       List<Attachments> attachments =
           tripDetails?.parcelRefund?.attachments ?? [];
       _thumbnailPaths = List.filled(attachments.length, '');
