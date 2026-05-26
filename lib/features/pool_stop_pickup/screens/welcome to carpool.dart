@@ -72,9 +72,7 @@ class _CarpoolScreenState extends State<CarpoolScreen> {
       // ================= BODY (OVERLAP DESIGN) =================
       body: Stack(
         children: [
-
           Container(color: const Color.fromARGB(255, 0, 0, 0)),
-
           Positioned(
             top: 20,
             left: 0,
@@ -90,7 +88,6 @@ class _CarpoolScreenState extends State<CarpoolScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-
                     const SizedBox(height: 30),
 
                     // ================= OPTIONS =================
@@ -129,7 +126,12 @@ class _CarpoolScreenState extends State<CarpoolScreen> {
                             onSubtitleChanged: (value) =>
                                 setState(() => subtitles[index] = value),
                             onTap: () => goToNext(
-                              ['trip', 'travel', 'routine', 'north_coast'][index],
+                              [
+                                'trip',
+                                'travel',
+                                'routine',
+                                'north_coast'
+                              ][index],
                             ),
                           ),
                         ),
@@ -182,7 +184,6 @@ class _CarpoolScreenState extends State<CarpoolScreen> {
                         ],
                       ),
                     ),
-
                   ],
                 ),
               ),
@@ -191,10 +192,10 @@ class _CarpoolScreenState extends State<CarpoolScreen> {
         ],
       ),
 
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => setState(() => isEditing = !isEditing),
-        child: Icon(isEditing ? Icons.check : Icons.edit),
-      ),
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: () => setState(() => isEditing = !isEditing),
+      //   child: Icon(isEditing ? Icons.check : Icons.edit),
+      // ),
     );
   }
 }

@@ -398,76 +398,94 @@ class _HomeScreenState extends State<HomeScreen> {
                                           const SizedBox(
                                               height:
                                                   Dimensions.paddingSizeLarge),
-                                                  InkWell(
-  onTap: () {
-    Get.to(() => const ParcelScreen());
-  },
-  child: Container(
-    margin: const EdgeInsets.symmetric(
-      horizontal: Dimensions.paddingSize,
-      vertical: 10,
-    ),
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Theme.of(context).cardColor,
-      borderRadius: BorderRadius.circular(14),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.08),
-          blurRadius: 10,
-          offset: const Offset(0, 4),
-        ),
-      ],
-    ),
-    child: Row(
-      children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            Icons.inventory_2_outlined,
-            color: Theme.of(context).primaryColor,
-          ),
-        ),
-
-        const SizedBox(width: 12),
-
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Parcels",
-                style: textRegular.copyWith(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                "View and manage your parcels",
-                style: textRegular.copyWith(
-                  fontSize: 12,
-                  color: Theme.of(context).hintColor,
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        Icon(
-          Icons.arrow_forward_ios,
-          size: 16,
-          color: Theme.of(context).hintColor,
-        ),
-      ],
-    ),
-  ),
-),
+                                          InkWell(
+                                            onTap: () {
+                                              Get.to(
+                                                  () => const ParcelScreen());
+                                            },
+                                            child: Container(
+                                              margin:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal:
+                                                    Dimensions.paddingSize,
+                                                vertical: 10,
+                                              ),
+                                              padding: const EdgeInsets.all(16),
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    Theme.of(context).cardColor,
+                                                borderRadius:
+                                                    BorderRadius.circular(14),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black
+                                                        .withOpacity(0.08),
+                                                    blurRadius: 10,
+                                                    offset: const Offset(0, 4),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  Container(
+                                                    width: 50,
+                                                    height: 50,
+                                                    decoration: BoxDecoration(
+                                                      color: Theme.of(context)
+                                                          .primaryColor
+                                                          .withOpacity(0.1),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
+                                                    ),
+                                                    child: Icon(
+                                                      Icons
+                                                          .inventory_2_outlined,
+                                                      color: Theme.of(context)
+                                                          .primaryColor,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 12),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          "Parcels",
+                                                          style: textRegular
+                                                              .copyWith(
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                            height: 4),
+                                                        Text(
+                                                          "View and manage your parcels",
+                                                          style: textRegular
+                                                              .copyWith(
+                                                            fontSize: 12,
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .hintColor,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  Icon(
+                                                    Icons.arrow_forward_ios,
+                                                    size: 16,
+                                                    color: Theme.of(context)
+                                                        .hintColor,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
                                           const BannerView(),
                                           // const Padding(
                                           //   padding: EdgeInsets.only(
@@ -484,7 +502,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 height: Dimensions
                                                     .paddingSizeDefault)
                                           ],
-                                          
                                         ]),
                                       ),
                                       const SizedBox(
@@ -546,7 +563,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       right: 0,
                       child: SizedBox(
                           height: 10,
-                          child: Image.asset(Images.peopleoutlineIcon, scale: 2.7)),
+                          child: Image.asset(Images.carTop, scale: 2.7)),
                     ),
                     Positioned(
                       bottom: 85,
@@ -606,9 +623,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       right: 0,
                       child: SizedBox(
                           height: 5, // much smaller height
-                          child: Image.asset(Images.carTop,
-                              scale:
-                                  5.0)), // much higher scale for smaller image
+                          child: Image.asset(
+                            Images.peopleoutlineIcon,
+                          )), // much higher scale for smaller image
                     ),
                     Positioned(
                       bottom: 85,
