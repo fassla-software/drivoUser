@@ -1069,5 +1069,10 @@
   "gender": "الجنس",
   "male": "ذكر",
   "female": "أنثى",
-  "select_gender": "اختر الجنس"
+  "select_gender": "اختر الجنس",
+  "payment_submitted": "تم إرسال الدفع",
+  "your_transfer_receipt_submitted": "تم إرسال إيصال التحويل بنجاح لمراجعة الإدارة.",
+  "go_to_home": "الذهاب للرئيسية",
+  "join_successful": "تم الانضمام بنجاح!",
+  "your_carpool_request_submitted": "تم تقديم طلب رحلة الكاربول الخاصة بك بنجاح!"
 }

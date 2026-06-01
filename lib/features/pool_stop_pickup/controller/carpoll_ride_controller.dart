@@ -262,10 +262,10 @@ class CarPollRideController extends GetxController implements GetxService {
     Response response = await rideServiceInterface.carpoolSubmitRideRequest(
       carpollRouteId: carpollRouteId,
       price: price,
-      pickupLat: pickupLat,
-      pickupLng: pickupLng,
-      destinationLat: destinationLat,
-      destinationLng: destinationLng,
+      pickupLat: pickupLng,
+      pickupLng: pickupLat,
+      destinationLat: destinationLng,
+      destinationLng: destinationLat,
       isCarpool: true,
     );
     return response;

@@ -17,9 +17,9 @@ class _CarpoolScreenState extends State<CarpoolScreen> {
   List<String> titles = ["One Trip", "Travel", "Routine", "North Coast"];
   List<String> subtitles = [
     "Book a ride instantly",
-    "Between cities",
-    "Daily or weekly rides",
-    "Summer trips"
+    "Travel from and to anywhere in Egypt",
+    "Weekly and Monthly rides",
+    "Summer trips inside north coast"
   ];
 
   void goToNext(String type) {

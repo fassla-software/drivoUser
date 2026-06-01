@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:ride_sharing_user_app/common_widgets/image_widget.dart';
 import 'package:ride_sharing_user_app/features/message/controllers/message_controller.dart';
+import 'package:ride_sharing_user_app/features/pool_stop_pickup/controller/carpoll_map_controller.dart';
+import 'package:ride_sharing_user_app/features/pool_stop_pickup/controller/carpoll_ride_controller.dart';
+import 'package:ride_sharing_user_app/features/pool_stop_pickup/screens/carpoll_map.dart';
 import 'package:ride_sharing_user_app/features/ride/domain/models/trip_details_model.dart';
 import 'package:ride_sharing_user_app/features/splash/controllers/config_controller.dart';
 import 'package:ride_sharing_user_app/helper/date_converter.dart';
 import 'package:ride_sharing_user_app/helper/price_converter.dart';
+import 'package:ride_sharing_user_app/helper/pusher_helper.dart';
 import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/util/styles.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -49,12 +53,14 @@ class CarpoolTripDetailsCard extends StatelessWidget {
             _carDetailsSection(context, vehicle),
             const SizedBox(height: Dimensions.paddingSizeDefault),
           ],
-          // if (tripDetails.otp != null &&
-          //     tripDetails.otp!.isNotEmpty &&
-          //     status == 'accepted') ...[
-          //   _otpSection(context),
-          //   const SizedBox(height: Dimensions.paddingSizeDefault),
-          // ],
+          if (tripDetails.otp != null &&
+              tripDetails.otp!.isNotEmpty &&
+              status == 'accepted') ...[
+            _otpSection(context),
+            const SizedBox(height: Dimensions.paddingSizeDefault),
+            _trackTripButton(context),
+            const SizedBox(height: Dimensions.paddingSizeDefault),
+          ],
           _metaRow(context, seats),
           const SizedBox(height: Dimensions.paddingSizeDefault),
           _routeSection(context),
@@ -612,87 +618,134 @@ class CarpoolTripDetailsCard extends StatelessWidget {
     }
   }
 
-  // Widget _otpSection(BuildContext context) {
-  //   final otp = tripDetails.otp ?? '';
-  //   if (otp.isEmpty) return const SizedBox.shrink();
+  Widget _otpSection(BuildContext context) {
+    final otp = tripDetails.otp ?? '';
+    if (otp.isEmpty) return const SizedBox.shrink();
 
-  //   return Container(
-  //     width: double.infinity,
-  //     padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
-  //     decoration: BoxDecoration(
-  //       color: Colors.white.withValues(alpha: 0.06),
-  //       borderRadius: BorderRadius.circular(16),
-  //       border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-  //     ),
-  //     child: Column(
-  //       children: [
-  //         Row(
-  //           mainAxisAlignment: MainAxisAlignment.center,
-  //           children: [
-  //             Icon(
-  //               Icons.lock_outline,
-  //               color: Theme.of(context).primaryColor,
-  //               size: 18,
-  //             ),
-  //             const SizedBox(width: 8),
-  //             Text(
-  //               'OTP / PIN'.tr,
-  //               style: textSemiBold.copyWith(
-  //                 color: Colors.white,
-  //                 fontSize: Dimensions.fontSizeDefault,
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //         const SizedBox(height: Dimensions.paddingSizeSmall),
-  //         Row(
-  //           mainAxisAlignment: MainAxisAlignment.center,
-  //           children: otp.split('').map((char) {
-  //             return Container(
-  //               margin: const EdgeInsets.symmetric(horizontal: 6),
-  //               width: 46,
-  //               height: 46,
-  //               decoration: BoxDecoration(
-  //                 color: Colors.white.withValues(alpha: 0.1),
-  //                 borderRadius: BorderRadius.circular(10),
-  //                 border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-  //               ),
-  //               child: Center(
-  //                 child: Text(
-  //                   char,
-  //                   style: textBold.copyWith(
-  //                     fontSize: 22,
-  //                     color: Colors.white,
-  //                   ),
-  //                 ),
-  //               ),
-  //             );
-  //           }).toList(),
-  //         ),
-  //         const SizedBox(height: Dimensions.paddingSizeSmall),
-  //         Text.rich(
-  //           TextSpan(
-  //             style: textRegular.copyWith(
-  //               fontSize: Dimensions.fontSizeSmall,
-  //               color: Colors.white.withValues(alpha: 0.7),
-  //             ),
-  //             children: [
-  //               TextSpan(text: 'please_share_the'.tr),
-  //               TextSpan(
-  //                 text: ' OTP '.tr,
-  //                 style: textSemiBold.copyWith(
-  //                   color: Theme.of(context).primaryColor,
-  //                 ),
-  //               ),
-  //               TextSpan(text: 'with_the_driver'.tr),
-  //             ],
-  //           ),
-  //           textAlign: TextAlign.center,
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.lock_outline,
+                color: Theme.of(context).primaryColor,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'OTP / PIN'.tr,
+                style: textSemiBold.copyWith(
+                  color: Colors.white,
+                  fontSize: Dimensions.fontSizeDefault,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: Dimensions.paddingSizeSmall),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: otp.split('').map((char) {
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 6),
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                ),
+                child: Center(
+                  child: Text(
+                    char,
+                    style: textBold.copyWith(
+                      fontSize: 22,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: Dimensions.paddingSizeSmall),
+          Text.rich(
+            TextSpan(
+              style: textRegular.copyWith(
+                fontSize: Dimensions.fontSizeSmall,
+                color: Colors.white.withValues(alpha: 0.7),
+              ),
+              children: [
+                TextSpan(text: 'please_share_the'.tr),
+                TextSpan(
+                  text: ' OTP '.tr,
+                  style: textSemiBold.copyWith(
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+                TextSpan(text: 'with_the_driver'.tr),
+              ],
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _trackTripButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: ElevatedButton.icon(
+        onPressed: () => _navigateToCarpoolMap(),
+        icon: const Icon(Icons.map_outlined, size: 20),
+        label: Text(
+          'track_trip'.tr,
+          style: textSemiBold.copyWith(
+            fontSize: Dimensions.fontSizeDefault,
+            color: Colors.white,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _statusBlue,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          elevation: 0,
+        ),
+      ),
+    );
+  }
+
+  void _navigateToCarpoolMap() {
+    final carpollRideController = Get.find<CarPollRideController>();
+
+    // Load trip details into the carpool ride controller and navigate
+    carpollRideController.getRideDetails(tripDetails.id!).then((response) {
+      if (response.statusCode == 200) {
+        // Set the ride state to otpSent so the map shows the OTP bottom sheet
+        carpollRideController.updateRideCurrentState(RideState.otpSent);
+
+        // Subscribe to driver status updates via pusher
+        PusherHelper().pusherDriverStatus(tripDetails.id!);
+
+        // Start tracking the driver's location
+        carpollRideController.startLocationRecord();
+        Get.find<CarpollMapController>().notifyMapController();
+
+        Get.to(() => const CarpollMap(fromScreen: MapScreenType.ride));
+      }
+    });
+  }
 
   Future<void> _launchTel(String phone) async {
     final uri = Uri.parse('tel:$phone');

@@ -141,24 +141,46 @@ class _InitialWidgetState extends State<InitialWidget> {
                           ? rideController.discountFare.toString()
                           : rideController.estimatedFare.toString(),
                     )
-                  : ButtonWidget(
-                      buttonText: "find_rider".tr,
-                      onPressed: () {
-                        rideController
-                            .submitRideRequest(
-                                rideController.noteController.text, false)
-                            .then((value) {
-                          if (value.statusCode == 200) {
-                            Get.find<AuthController>()
-                                .saveFindingRideCreatedTime();
-                            rideController
-                                .updateRideCurrentState(RideState.findingRider);
-                            Get.find<MapController>().initializeData();
-                            Get.find<MapController>().setOwnCurrentLocation();
-                            Get.find<MapController>().notifyMapController();
-                          }
-                        });
-                      }),
+                  :ButtonWidget(
+  buttonText: "find_rider".tr,
+  onPressed: () async {
+    final rideController = Get.find<RideController>();
+
+    // 🛑 منع التكرار (أهم سطر)
+    if (rideController.isSubmit == true) return;
+
+    // اقفل الزر فورًا
+    rideController.isSubmit = true;
+    rideController.update();
+
+    try {
+      final response = await rideController.submitRideRequest(
+        rideController.noteController.text,
+        false,
+      );
+
+      if (response.statusCode == 200) {
+        Get.find<AuthController>()
+            .saveFindingRideCreatedTime();
+
+        rideController.updateRideCurrentState(
+          RideState.findingRider,
+        );
+
+        final mapController = Get.find<MapController>();
+        mapController.initializeData();
+        mapController.setOwnCurrentLocation();
+        mapController.notifyMapController();
+      }
+    } catch (e) {
+      debugPrint("Submit Ride Error: $e");
+    } finally {
+      // افتح الزر تاني
+      rideController.isSubmit = false;
+      rideController.update();
+    }
+  },
+)
         ]);
       });
     });

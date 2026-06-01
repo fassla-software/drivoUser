@@ -65,9 +65,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
     _slideController.forward();
   }
 
-  // New State Variable for selected dates
-  List<DateTime> _selectedDates = [];
-
   @override
   void dispose() {
     _fadeController.dispose();
@@ -81,7 +78,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
       backgroundColor: Colors.grey[50],
       body: CustomScrollView(
         slivers: [
-          // App Bar
           SliverAppBar(
             expandedHeight: 200,
             floating: false,
@@ -120,8 +116,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
               ),
             ),
           ),
-
-          // Content
           SliverToBoxAdapter(
             child: FadeTransition(
               opacity: _fadeAnimation,
@@ -131,27 +125,16 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
                   padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
                   child: Column(
                     children: [
-                      // Driver Information Card
                       _buildDriverCard(),
                       const SizedBox(height: 16),
-
-                      // Trip Information Card
                       _buildTripInfoCard(),
                       const SizedBox(height: 16),
-
-                      // Vehicle Information Card
                       _buildVehicleCard(),
                       const SizedBox(height: 16),
-
-                      // Amenities Card
                       _buildAmenitiesCard(),
                       const SizedBox(height: 16),
-
-                      // Route Information Card
                       _buildRouteCard(),
                       const SizedBox(height: 24),
-
-                      // Action Buttons
                       _buildActionButtons(),
                       const SizedBox(height: 24),
                     ],
@@ -210,9 +193,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
           const SizedBox(height: 16),
           Row(
             children: [
-              // Driver Avatar
               Builder(builder: (context) {
-                print('Profile Image URL: ${widget.trip.driver.profileImage}');
                 return Container(
                   width: 60,
                   height: 60,
@@ -264,7 +245,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.star, size: 16, color: Colors.amber),
+                        const Icon(Icons.star, size: 16, color: Colors.amber),
                         const SizedBox(width: 4),
                         Text(
                           '4.8 • ${widget.trip.driver.gender.isNotEmpty ? '${widget.trip.driver.gender[0].toUpperCase()}${widget.trip.driver.gender.substring(1)}' : 'Unknown'}',
@@ -278,7 +259,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
                   ],
                 ),
               ),
-              // Price Badge
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -327,7 +307,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
                   color: Colors.blue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.route,
                   color: Colors.blue,
                   size: 20,
@@ -368,7 +348,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
                           size: 16, color: Theme.of(context).primaryColor),
                       const SizedBox(width: 8),
                       Text(
-                        'Recurring Trip',
+                        'Trip Dates',
                         style: textBold.copyWith(
                           fontSize: 14,
                           color: Theme.of(context).primaryColor,
@@ -385,45 +365,38 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
                       runSpacing: 8,
                       children:
                           (widget.trip.recurringInfo!.availableDates! as List)
-                              .take(5)
+                              .where((date) {
+                                final now = DateTime.now();
+                                final today =
+                                    DateTime(now.year, now.month, now.day);
+                                final tripDate =
+                                    DateTime(date.year, date.month, date.day);
+                                return !tripDate.isBefore(today);
+                              })
+                              .take(31)
                               .map((date) {
-                        bool isSelected = _selectedDates.contains(date);
-                        return InkWell(
-                          onTap: () {
-                            setState(() {
-                              if (isSelected) {
-                                _selectedDates.remove(date);
-                              } else {
-                                _selectedDates.add(date);
-                              }
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? Theme.of(context).primaryColor
-                                  : Colors.white,
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(
-                                color: Theme.of(context)
-                                    .primaryColor
-                                    .withOpacity(0.2),
-                              ),
-                            ),
-                            child: Text(
-                              _formatDate(date),
-                              style: textRegular.copyWith(
-                                fontSize: 12,
-                                color: isSelected
-                                    ? Colors.white
-                                    : Theme.of(context).primaryColor,
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                      color: Theme.of(context)
+                                          .primaryColor
+                                          .withOpacity(0.2),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    _formatDate(date),
+                                    style: textRegular.copyWith(
+                                      fontSize: 12,
+                                      color: Theme.of(context).primaryColor,
+                                    ),
+                                  ),
+                                );
+                              })
+                              .toList(),
                     ),
                   ],
                 ],
@@ -465,7 +438,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
                   color: Colors.green.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.directions_car,
                   color: Colors.green,
                   size: 20,
@@ -542,7 +515,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
                   color: Colors.purple.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.star,
                   color: Colors.purple,
                   size: 20,
@@ -596,7 +569,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
                   color: Colors.orange.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.location_on,
                   color: Colors.orange,
                   size: 20,
@@ -613,8 +586,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
             ],
           ),
           const SizedBox(height: 16),
-
-          // Closest Pickup
           if ((widget.trip is SearchTripeAll || widget.trip is PoolRide) &&
               widget.trip.closestPickup != null) ...[
             _buildLocationRow(
@@ -625,8 +596,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
             ),
             const SizedBox(height: 12),
           ],
-
-          // Closest Dropoff
           if ((widget.trip is SearchTripeAll || widget.trip is PoolRide) &&
               widget.trip.closestDropoff != null) ...[
             _buildLocationRow(
@@ -637,9 +606,9 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
             ),
             const SizedBox(height: 12),
           ],
-
-          // Distance Information
-          if (widget.trip.closestPickup != null && !(widget.trip is PoolRide && widget.trip.carpoolType == 'travel')) ...[
+          if (widget.trip.closestPickup != null &&
+              !(widget.trip is PoolRide &&
+                  widget.trip.carpoolType == 'travel')) ...[
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -648,7 +617,8 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
               ),
               child: Row(
                 children: [
-                  Icon(Icons.directions_walk, color: Colors.blue, size: 16),
+                  const Icon(Icons.directions_walk,
+                      color: Colors.blue, size: 16),
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
@@ -678,7 +648,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
   Widget _buildActionButtons() {
     return Column(
       children: [
-        // View Route Button
         Container(
           width: double.infinity,
           height: 56,
@@ -708,7 +677,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.map, size: 24, color: Colors.white),
+                    const Icon(Icons.map, size: 24, color: Colors.white),
                     const SizedBox(width: 12),
                     Text(
                       'View Route on Map',
@@ -724,8 +693,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
           ),
         ),
         const SizedBox(height: 16),
-
-        // Join Trip Button
         Container(
           width: double.infinity,
           height: 56,
@@ -755,7 +722,8 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.check_circle, size: 24, color: Colors.white),
+                    const Icon(Icons.check_circle,
+                        size: 24, color: Colors.white),
                     const SizedBox(width: 12),
                     Text(
                       'Join This Trip',
@@ -880,7 +848,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
         return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
       }
       if (date is String) {
-        DateTime dateTime = DateTime.parse(date);
+        final DateTime dateTime = DateTime.parse(date);
         return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
       }
       return date.toString();
@@ -907,7 +875,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
             ),
             child: Column(
               children: [
-                // Header
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -935,7 +902,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
                     ],
                   ),
                 ),
-                // Map
                 Expanded(
                   child: ClipRRect(
                     borderRadius: const BorderRadius.only(
@@ -960,7 +926,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
                       mapToolbarEnabled: true,
                       compassEnabled: true,
                       markers: {
-                        // Main pickup point
                         Marker(
                           markerId: const MarkerId('pickup'),
                           position: LatLng(
@@ -975,7 +940,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
                             snippet: trip.pickupAddress,
                           ),
                         ),
-                        // Main dropoff point
                         Marker(
                           markerId: const MarkerId('dropoff'),
                           position: LatLng(
@@ -990,7 +954,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
                             snippet: trip.dropoffAddress,
                           ),
                         ),
-                        // Closest pickup point if available
                         if (trip.closestPickup != null)
                           Marker(
                             markerId: const MarkerId('closest_pickup'),
@@ -1006,7 +969,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
                               snippet: trip.closestPickup!.placeName,
                             ),
                           ),
-                        // Closest dropoff point if available
                         if (trip.closestDropoff != null)
                           Marker(
                             markerId: const MarkerId('closest_dropoff'),
@@ -1043,7 +1005,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
                     ),
                   ),
                 ),
-                // Bottom actions
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -1073,13 +1034,16 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
                         ),
                         const SizedBox(height: 8),
                       ],
-                      if (!(trip is PoolRide && trip.carpoolType == 'travel')) ...[
+                      if (!(trip is PoolRide &&
+                          trip.carpoolType == 'travel')) ...[
                         Text(
                           'Walking distance to pickup: ${PriceConverter.formatDistance(PriceConverter.calculateDistance(
                             trip.pickupMatchPoint.lat,
                             trip.pickupMatchPoint.lng,
-                            trip.closestPickup?.lat ?? trip.pickupMatchPoint.lat,
-                            trip.closestPickup?.lng ?? trip.pickupMatchPoint.lng,
+                            trip.closestPickup?.lat ??
+                                trip.pickupMatchPoint.lat,
+                            trip.closestPickup?.lng ??
+                                trip.pickupMatchPoint.lng,
                           ))}',
                           style: textMedium.copyWith(
                             fontSize: Dimensions.fontSizeSmall,
@@ -1102,18 +1066,22 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
     try {
       if (encoded.isEmpty) return [];
 
-      List<LatLng> poly = [];
-      int index = 0, len = encoded.length;
-      int lat = 0, lng = 0;
+      final List<LatLng> poly = [];
+      int index = 0;
+      final int len = encoded.length;
+      int lat = 0;
+      int lng = 0;
 
       while (index < len) {
-        int b, shift = 0, result = 0;
+        int b;
+        int shift = 0;
+        int result = 0;
         do {
           b = encoded.codeUnitAt(index++) - 63;
           result |= (b & 0x1f) << shift;
           shift += 5;
         } while (b >= 0x20);
-        int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+        final int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
         lat += dlat;
 
         shift = 0;
@@ -1123,14 +1091,14 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
           result |= (b & 0x1f) << shift;
           shift += 5;
         } while (b >= 0x20);
-        int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+        final int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
         lng += dlng;
-        LatLng p = LatLng((lat / 1E5).toDouble(), (lng / 1E5).toDouble());
+        final LatLng p = LatLng((lat / 1E5).toDouble(), (lng / 1E5).toDouble());
         poly.add(p);
       }
       return poly;
     } catch (e) {
-      print('Error decoding polyline: $e');
+      debugPrint('Error decoding polyline: $e');
       return [];
     }
   }
@@ -1148,7 +1116,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
       maxLng = max(maxLng, lng);
     }
 
-    // Include all points in bounds
     updateBounds(trip.pickupMatchPoint.lat, trip.pickupMatchPoint.lng);
     updateBounds(trip.dropoffMatchPoint.lat, trip.dropoffMatchPoint.lng);
     if (trip.closestPickup != null) {
@@ -1158,7 +1125,6 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
       updateBounds(trip.closestDropoff!.lat, trip.closestDropoff!.lng);
     }
 
-    // Add padding
     final bounds = LatLngBounds(
       southwest: LatLng(minLat, minLng),
       northeast: LatLng(maxLat, maxLng),
@@ -1167,16 +1133,14 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
     controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
   }
 
-  void _openInGoogleMaps(double lat, double lng) async {
+  Future<void> _openInGoogleMaps(double lat, double lng) async {
     try {
-      // Use Google Maps directions URL to navigate to the meeting point
       final url =
           'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving';
 
       if (await canLaunchUrl(Uri.parse(url))) {
         await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
       } else {
-        // Fallback to search URL
         final fallbackUrl = 'https://maps.google.com/maps?q=$lat,$lng';
         if (await canLaunchUrl(Uri.parse(fallbackUrl))) {
           await launchUrl(Uri.parse(fallbackUrl),
@@ -1191,7 +1155,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
         }
       }
     } catch (e) {
-      print('Error opening Google Maps: $e');
+      debugPrint('Error opening Google Maps: $e');
       Get.snackbar(
         'Error',
         'Could not open Google Maps. Please try again.',
@@ -1202,15 +1166,13 @@ class _TripDetailsScreenState extends State<TripDetailsScreen>
   }
 
   void _selectTrip(dynamic trip, RideController rideController) {
-    String bookingType = _selectedDates.isNotEmpty ? 'selected' : 'all';
     rideController.selectCarpoolTrip(
       trip,
-      bookingType: bookingType,
-      selectedDates: _selectedDates,
+      bookingType: 'all',
+      selectedDates: const [],
     );
 
-    // Navigate back to the previous screen
-    Navigator.of(context).pop();
+    // Navigator.of(context).pop();
   }
 }
 

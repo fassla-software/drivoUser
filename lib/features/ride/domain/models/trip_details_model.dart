@@ -302,7 +302,11 @@ class TripDetails {
       otp = json['otp'];
       riseRequestCount = json['rise_request_count'];
       type = json['type'];
-      createdAt = json['scheduled_at'];
+      createdAt = (json['scheduled_at'].toString().isEmpty ||
+              json['scheduled_at'].toString().toLowerCase() == 'null' ||
+              !(json['is_carpool'] == true || json['is_carpool'] == 1))
+          ? json['created_at']
+          : json['scheduled_at'];
       entrance = json['entrance'];
       intermediateAddresses = json['intermediate_addresses'];
       encodedPolyline = json['encoded_polyline'];

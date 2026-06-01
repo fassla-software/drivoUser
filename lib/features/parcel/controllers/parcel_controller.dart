@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:ride_sharing_user_app/common_widgets/expandable_bottom_sheet.dar.dart';
 import 'package:ride_sharing_user_app/data/api_checker.dart';
+import 'package:ride_sharing_user_app/data/api_client.dart';
 import 'package:ride_sharing_user_app/features/parcel/domain/models/parcel_category_model.dart';
 import 'package:ride_sharing_user_app/features/parcel/domain/models/parcel_list_model.dart';
 import 'package:ride_sharing_user_app/features/parcel/domain/models/suggested_vehicle_category_model.dart';
@@ -9,11 +10,28 @@ import 'package:ride_sharing_user_app/features/parcel/domain/services/parcel_ser
 import 'package:ride_sharing_user_app/features/payment/controllers/payment_controller.dart';
 
 enum ParcelDeliveryState{initial, parcelInfoDetails, addOtherParcelDetails, riseFare, findingRider, suggestVehicle, acceptRider, otpSent, parcelOngoing, parcelComplete}
+ParcelListModel? parcelTripDetails;
+
+enum ParcelTripState {
+  initial,
+  findingDriver,
+  acceptRider,
+  otpSent,
+  ongoing,
+  completed
+}
+ParcelTripState currentParcelTripState = ParcelTripState.initial;
 
 class ParcelController extends GetxController with GetSingleTickerProviderStateMixin implements GetxService {
   final ParcelServiceInterface parcelServiceInterface;
   ParcelController({required this.parcelServiceInterface});
-
+@override
+Future<Response> currentRideStatus(String type) async {
+  final ApiClient apiClient = Get.find<ApiClient>();
+  return await apiClient.getData(
+    '/api/customer/ride/ride-resume-status?type=$type',
+  );
+}
   ParcelDeliveryState currentParcelState = ParcelDeliveryState.initial;
   late TabController tabController = TabController(length: 2, vsync: this);
   bool isLoading = false;
@@ -65,12 +83,53 @@ class ParcelController extends GetxController with GetSingleTickerProviderStateM
       update();
     }
   }
+  
   void onChangeReceiverCountryCode(String? code) {
     _receiverCountryDialCode = code;
     update();
   }
+  
+Future<Response?> getCurrentParcelRide() async {
+  Response response =
+      await currentRideStatus("parcel");
 
+  if (response.statusCode == 200 &&
+      response.body != null &&
+      response.body['data'] != null) {
 
+    parcelTripDetails = ParcelListModel.fromJson(response.body);
+
+    String status = response.body['data']['current_status'];
+
+    if (status == 'pending') {
+      currentParcelTripState = ParcelTripState.findingDriver;
+    } 
+    else if (status == 'accepted') {
+      currentParcelTripState = ParcelTripState.acceptRider;
+    } 
+    else if (status == 'ongoing') {
+      currentParcelTripState = ParcelTripState.ongoing;
+    } 
+    else if (status == 'completed') {
+      currentParcelTripState = ParcelTripState.completed;
+    }
+  }
+
+  // 🚨 أهم جزء
+  else if (response.statusCode == 403) {
+    print("No active trip found");
+
+    parcelTripDetails = null;
+    currentParcelTripState = ParcelTripState.initial;
+  }
+
+  update();
+  return response;
+}
+void updateParcelTripState(ParcelTripState newState) {
+  currentParcelTripState = newState;
+  update();
+}
   void initParcelData() {
     payReceiver = false;
     currentParcelState = ParcelDeliveryState.initial;

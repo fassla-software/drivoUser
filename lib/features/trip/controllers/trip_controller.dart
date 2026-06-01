@@ -118,7 +118,7 @@ class TripController extends GetxController implements GetxService {
       update();
     }
     final response = await tripServiceInterface.getTripList(
-      'parcel_request',
+      'parcel',
       offset,
       _filterStartDate,
       _filterEndDate,

@@ -141,15 +141,74 @@ class _CarpoolPaymentDetailsScreenState
     });
 
     if (success) {
-      Get.offAll(() => const DashboardScreen());
-      Get.snackbar(
-        'Payment Submitted!',
-        'Your transfer receipt was successfully submitted for admin review.',
-        backgroundColor: Colors.black,
-        colorText: Colors.white,
-        icon: const Icon(Icons.check_circle_outline, color: Colors.green),
-        snackPosition: SnackPosition.TOP,
-        duration: const Duration(seconds: 4),
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE8F5E9),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle_outline,
+                    color: Colors.green,
+                    size: 36,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'payment_submitted'.tr,
+                  style: textBold.copyWith(fontSize: 18, color: Colors.black),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'your_transfer_receipt_submitted'.tr,
+                  style: textRegular.copyWith(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () =>
+                        Get.offAll(() => const DashboardScreen()),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      'go_to_home'.tr,
+                      style: textSemiBold.copyWith(
+                        fontSize: 15,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
     }
   }

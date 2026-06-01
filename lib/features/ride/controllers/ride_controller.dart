@@ -33,6 +33,8 @@ import 'package:ride_sharing_user_app/features/pool_stop_pickup/domain/models/fi
 import 'package:ride_sharing_user_app/features/pool_stop_pickup/controller/pool_stop_pickup_controller.dart';
 import 'package:ride_sharing_user_app/features/payment/screens/carpool_payment_details_screen.dart';
 
+import '../../../util/styles.dart';
+
 enum RideState {
   initial,
   riseFare,
@@ -42,6 +44,21 @@ enum RideState {
   otpSent,
   ongoingRide,
   completeRide
+}
+enum RideRequestType {
+  ride,
+  parcel,
+  carpool
+}
+String getType(RideRequestType type) {
+  switch (type) {
+    case RideRequestType.parcel:
+      return 'parcel';
+    case RideRequestType.carpool:
+      return 'carpool';
+    default:
+      return 'ride_request';
+  }
 }
 
 enum RideType { car, bike, parcel, luxury }
@@ -829,7 +846,7 @@ class RideController extends GetxController implements GetxService {
   Future<Response> getCurrentRide(
       {bool fromRefresh = false,
       bool navigateToMap = true,
-      String type = ''}) async {
+      String type = 'parcel'}) async {
     Response response = await rideServiceInterface.currentRideStatus(type);
     print(" ride====== ${response.body['data']}");
 
@@ -1347,7 +1364,7 @@ class RideController extends GetxController implements GetxService {
 
         if (paymentRequired && paymentAccounts.isNotEmpty) {
           // Route to Instapay payment screen
-          Get.to(() => CarpoolPaymentDetailsScreen(
+          Get.off(() => CarpoolPaymentDetailsScreen(
                 tripId: tripId,
                 carpoolType: carpoolType,
                 totalPrice: price,
@@ -1356,14 +1373,77 @@ class RideController extends GetxController implements GetxService {
                     .toList(),
                 proration: proration,
               ));
-          // Payment not required — go to dashboard
-          Get.offAll(() => const DashboardScreen());
-          Future.delayed(const Duration(milliseconds: 300), () {
-            showCustomSnackBar(
-              'Your carpool ride request has been submitted successfully!',
-              isError: false,
-            );
-          });
+        } else {
+          // Payment not required — show success dialog
+          showDialog(
+            context: Get.context!,
+            barrierDismissible: false,
+            builder: (ctx) => Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFE8F5E9),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.check_circle_outline,
+                        color: Colors.green,
+                        size: 36,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'join_successful'.tr,
+                      style: textBold.copyWith(fontSize: 18, color: Colors.black),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'your_carpool_request_submitted'.tr,
+                      style: textRegular.copyWith(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Get.offAll(() => const DashboardScreen());
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(ctx).primaryColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          'go_to_home'.tr,
+                          style: textSemiBold.copyWith(
+                            fontSize: 15,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
         }
       } else {
         ApiChecker.checkApi(response);
@@ -1441,13 +1521,13 @@ class RideController extends GetxController implements GetxService {
 
       case 'routine':
         // Add coordinates + departure/return times + booking_type
-        final pickupLat =
-            trip.closestPickup?.lat ?? trip.pickupMatchPoint?.lat ?? 0.0;
         final pickupLng =
+            trip.closestPickup?.lat ?? trip.pickupMatchPoint?.lat ?? 0.0;
+        final pickupLat =
             trip.closestPickup?.lng ?? trip.pickupMatchPoint?.lng ?? 0.0;
-        final dropLat =
-            trip.closestDropoff?.lat ?? trip.dropoffMatchPoint?.lat ?? 0.0;
         final dropLng =
+            trip.closestDropoff?.lat ?? trip.dropoffMatchPoint?.lat ?? 0.0;
+        final dropLat =
             trip.closestDropoff?.lng ?? trip.dropoffMatchPoint?.lng ?? 0.0;
         body['pickup_coordinates'] = '[$pickupLat,$pickupLng]';
         body['destination_coordinates'] = '[$dropLat,$dropLng]';
@@ -1463,13 +1543,13 @@ class RideController extends GetxController implements GetxService {
       case 'north_coast':
       default:
         // Use closest match-point coordinates
-        final pickupLat =
-            trip.closestPickup?.lat ?? trip.pickupMatchPoint?.lat ?? 0.0;
         final pickupLng =
+            trip.closestPickup?.lat ?? trip.pickupMatchPoint?.lat ?? 0.0;
+        final pickupLat =
             trip.closestPickup?.lng ?? trip.pickupMatchPoint?.lng ?? 0.0;
-        final dropLat =
-            trip.closestDropoff?.lat ?? trip.dropoffMatchPoint?.lat ?? 0.0;
         final dropLng =
+            trip.closestDropoff?.lat ?? trip.dropoffMatchPoint?.lat ?? 0.0;
+        final dropLat =
             trip.closestDropoff?.lng ?? trip.dropoffMatchPoint?.lng ?? 0.0;
         body['pickup_coordinates'] = '[$pickupLat,$pickupLng]';
         body['destination_coordinates'] = '[$dropLat,$dropLng]';

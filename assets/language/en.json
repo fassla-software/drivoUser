@@ -804,5 +804,10 @@
   "gender": "Gender",
   "male": "Male",
   "female": "Female",
-  "select_gender": "Select Gender"
+  "select_gender": "Select Gender",
+  "payment_submitted": "Payment Submitted",
+  "your_transfer_receipt_submitted": "Your transfer receipt was successfully submitted for admin review.",
+  "go_to_home": "Go to Home",
+  "join_successful": "Joined Successfully!",
+  "your_carpool_request_submitted": "Your carpool ride request has been submitted successfully!"
 }
