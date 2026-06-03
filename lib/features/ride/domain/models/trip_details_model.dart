@@ -193,7 +193,7 @@ class TripDetails {
       this.distanceTexttt});
   String get formatedEstamitedTimeInMinutes {
     int parsedDate = (double.tryParse(estimatedTime ?? '0') ?? 0).floor();
-    return realEstamitedTimeText;
+    return '$parsedDate min';
   }
 
   String get realEstamitedTimeText {

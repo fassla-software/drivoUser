@@ -16,6 +16,9 @@ import 'package:ride_sharing_user_app/features/ride/controllers/ride_controller.
 import 'package:ride_sharing_user_app/common_widgets/divider_widget.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:ride_sharing_user_app/theme/theme_controller.dart';
+import 'package:ride_sharing_user_app/helper/route_helper.dart';
+
+import '../../location/view/pick_map_screen.dart';
 
 class SetDestinationScreen extends StatefulWidget {
   final Address? address;
@@ -263,8 +266,25 @@ class _SetDestinationScreenState extends State<SetDestinationScreen> {
                                             fontSize: 12, color: Colors.grey)),
                                     const SizedBox(height: 4),
                                     _InputFieldContainer(
-                                      prefixIcon: const Icon(Icons.location_on,
-                                          size: 18, color: Colors.black),
+                                      prefixIcon: InkWell(
+                                        onTap: () {
+                                          if (hasActiveRide) {
+                                            showCustomSnackBar(
+                                                'your_ride_is_ongoing_complete'.tr,
+                                                isError: true);
+                                          } else {
+                                            RouteHelper.goPageAndHideTextField(
+                                              context,
+                                              PickMapScreen(
+                                                type: LocationType.from,
+                                                oldLocationExist: locationController.pickPosition.latitude > 0 ? true : false,
+                                              ),
+                                            );
+                                          }
+                                        },
+                                        child: const Icon(Icons.location_on,
+                                            size: 18, color: Colors.black),
+                                      ),
                                       onClear: () {
                                         locationController
                                             .pickupLocationController
@@ -304,10 +324,27 @@ class _SetDestinationScreenState extends State<SetDestinationScreen> {
                                       children: [
                                         Expanded(
                                           child: _InputFieldContainer(
-                                            prefixIcon: const Icon(
-                                                Icons.location_on,
-                                                size: 18,
-                                                color: Colors.black),
+                                            prefixIcon: InkWell(
+                                              onTap: () {
+                                                if (hasActiveRide) {
+                                                  showCustomSnackBar(
+                                                      'your_ride_is_ongoing_complete'.tr,
+                                                      isError: true);
+                                                } else {
+                                                  RouteHelper.goPageAndHideTextField(
+                                                    context,
+                                                    PickMapScreen(
+                                                      type: LocationType.to,
+                                                      oldLocationExist: locationController.pickPosition.latitude > 0 ? true : false,
+                                                    ),
+                                                  );
+                                                }
+                                              },
+                                              child: const Icon(
+                                                  Icons.location_on,
+                                                  size: 18,
+                                                  color: Colors.black),
+                                            ),
                                             onClear: () {
                                               locationController
                                                   .destinationLocationController

@@ -261,10 +261,10 @@ Future<Map<String, Map<String, String>>> init() async {
 
   RideRepositoryInterface rideRepositoryInterface =
       RideRepository(apiClient: Get.find());
-  Get.lazyPut<RideRepositoryInterface>(() => rideRepositoryInterface);
+  Get.lazyPut<RideRepositoryInterface>(() => rideRepositoryInterface, fenix: true);
   RideServiceInterface rideServiceInterface =
       RideService(rideRepositoryInterface: Get.find());
-  Get.lazyPut<RideServiceInterface>(() => rideServiceInterface);
+  Get.lazyPut<RideServiceInterface>(() => rideServiceInterface, fenix: true);
 
   ConfigRepositoryInterface configRepositoryInterface =
       ConfigRepository(apiClient: Get.find(), sharedPreferences: Get.find());

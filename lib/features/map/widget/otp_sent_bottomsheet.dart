@@ -173,8 +173,10 @@ class _OtpSentBottomSheetState extends State<OtpSentBottomSheet> {
             ? rideController.tripDetails != null
                 ? Column(children: [
                     TollTipWidget(
-                        title:
-                            '${(rideController.remainingDistanceModel.isNotEmpty) ? (rideController.remainingDistanceModel[0].duration) ?? '0' : '0'} ${'away'.tr}'),
+                      title:
+                          // '${(rideController.remainingDistanceModel.isNotEmpty) ? (rideController.remainingDistanceModel[0].duration) ?? '0' : '0'} ${'away'.tr}'
+                          '${rideController.tripDetails?.formatedEstamitedTimeInMinutes ?? 0} ${'away'.tr}',
+                    ),
                     const SizedBox(
                       height: Dimensions.paddingSizeDefault,
                     ),

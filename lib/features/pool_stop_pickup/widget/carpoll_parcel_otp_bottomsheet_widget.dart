@@ -43,7 +43,9 @@ class _CarPollParcelOtpBottomSheetWidgetState
                 children: [
                     TollTipWidget(
                         title:
-                            '${(rideController.remainingDistanceModel.isNotEmpty) ? (rideController.remainingDistanceModel[0].duration) ?? '0' : '0'} ${'away'.tr}'),
+                            // '${(rideController.remainingDistanceModel.isNotEmpty) ? (rideController.remainingDistanceModel[0].duration) ?? '0' : '0'} ${'away'.tr}'
+                            '${rideController.tripDetails?.formatedEstamitedTimeInMinutes ?? 0} ${'away'.tr}'
+                            ),
                     const SizedBox(height: Dimensions.paddingSizeDefault),
                     const Center(child: OtpWidget(fromPage: true)),
                     const ActivityScreenRiderDetails(),
