@@ -208,13 +208,18 @@ class _RouteWidgetState extends State<RouteWidget> {
                   if (tripDetails == null) return const SizedBox();
 
                   final createdAt = tripDetails.createdAt;
-                  final timeText = createdAt != null && createdAt.isNotEmpty
-                      ? DateConverter.isoDateTimeStringToLocalTime(createdAt)
-                      : '—';
+                  final timeText = DateConverter.dateToTimeOnly(
+                    DateTime.now().add(
+                      Duration(
+                        minutes: int.tryParse(tripDetails
+                                .formatedEstamitedTimeInMinutes
+                                .split(' ')[0]) ??
+                            0,
+                      ),
+                    ),
+                  );
                   final durationText =
-                      tripDetails.estimatedTime?.isNotEmpty == true
-                          ? tripDetails.estimatedTime!
-                          : '';
+                      tripDetails.formatedEstamitedTimeInMinutes;
 
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

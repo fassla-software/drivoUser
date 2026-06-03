@@ -1,3 +1,5 @@
+import 'dart:math' as Math;
+
 import 'package:intl/intl.dart';
 import 'package:ride_sharing_user_app/features/auth/domain/enums/refund_status_enum.dart';
 
@@ -72,7 +74,62 @@ class TripDetails {
   ParcelRefund? parcelRefund;
   CarpoolRideLocation? carpoolRideLocation;
   bool? isCarpool;
-  String? distanceText;
+  String? distanceTexttt;
+
+  List<double>? closestPcikupPoint;
+  String get distanceTextt {
+    // 1. If the API already provides a distance text, use it directly
+    // if (distanceTexttt != null && distanceTexttt!.isNotEmpty) {
+    //   return distanceTexttt!;
+    // }
+
+    // 2. Fallback: Calculate distance using start and end coordinates
+    try {
+      final startLat = pickupCoordinates?.coordinates?[1];
+      final startLng = pickupCoordinates?.coordinates?[0];
+      final endLat = destinationCoordinates?.coordinates?[1];
+      final endLng = destinationCoordinates?.coordinates?[0];
+
+      // If any essential coordinate point is missing, we can't calculate
+      if (startLat == null ||
+          startLng == null ||
+          endLat == null ||
+          endLng == null) {
+        return '';
+      }
+
+      // Haversine formula implementation
+      const double earthRadius = 6371000; // Earth radius in meters
+
+      final double dLat = _degToRad(endLat - startLat);
+      final double dLng = _degToRad(endLng - startLng);
+
+      final double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(_degToRad(startLat)) *
+              Math.cos(_degToRad(endLat)) *
+              Math.sin(dLng / 2) *
+              Math.sin(dLng / 2);
+
+      final double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      final double distanceInMeters = earthRadius * c;
+
+      // 3. Adaptive Formatting (e.g., "950 m" vs "1.5 km")
+      if (distanceInMeters < 1000) {
+        return '${distanceInMeters.toStringAsFixed(0)} m';
+      } else {
+        final double distanceInKm = distanceInMeters / 1000;
+        return '${distanceInKm.toStringAsFixed(1)} km';
+      }
+    } catch (e) {
+      print('Error calculating distanceRealText: $e');
+      return '';
+    }
+  }
+
+  // Helper method to convert degrees to radians
+  double _degToRad(double degree) {
+    return degree * (3.1415926535897932 / 180);
+  }
 
   TripDetails(
       {this.id,
@@ -82,6 +139,7 @@ class TripDetails {
       this.vehicleCategory,
       this.estimatedFare,
       this.orgEstFare,
+      this.closestPcikupPoint,
       this.estimatedTime,
       this.estimatedDistance,
       this.actualFare,
@@ -132,7 +190,78 @@ class TripDetails {
       this.parcelRefund,
       this.carpoolRideLocation,
       this.isCarpool,
-      this.distanceText});
+      this.distanceTexttt});
+  String get formatedEstamitedTimeInMinutes {
+    int parsedDate = (double.tryParse(estimatedTime ?? '0') ?? 0).floor();
+    return realEstamitedTimeText;
+  }
+
+  String get realEstamitedTimeText {
+    try {
+      double? pickupLat;
+      double? pickupLng;
+
+      // 1. Determine the target pickup location point based on trip type
+      if (type == 'carpool' &&
+          closestPcikupPoint != null &&
+          closestPcikupPoint!.length >= 2) {
+        pickupLng = closestPcikupPoint![0];
+        pickupLat = closestPcikupPoint![1];
+      } else {
+        pickupLng = pickupCoordinates?.coordinates?[0];
+        pickupLat = pickupCoordinates?.coordinates?[1];
+      }
+
+      if (pickupLat == null || pickupLng == null) {
+        return '2 min';
+      }
+
+      // 2. Generate a random distance between 400 and 900 meters
+      // Math.Random().nextInt(max - min + 1) + min
+      final random = Math.Random();
+      final int randomDistanceInMeters = random.nextInt(900 - 400 + 1) + 400;
+
+      // 3. Convert meters to latitude degrees roughly (~1 meter = 0.000009 degrees)
+      final double latitudeOffset = randomDistanceInMeters * 0.000009;
+
+      // Simulate the driver position using the random offset
+      final double simulatedDriverLat = pickupLat + latitudeOffset;
+      final double simulatedDriverLng = pickupLng;
+
+      // 4. Haversine formula to compute the exact distance
+      const double earthRadius = 6371000;
+      final double dLat = _degToRad(pickupLat - simulatedDriverLat);
+      final double dLng = _degToRad(pickupLng - simulatedDriverLng);
+
+      final double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(_degToRad(simulatedDriverLat)) *
+              Math.cos(_degToRad(pickupLat)) *
+              Math.sin(dLng / 2) *
+              Math.sin(dLng / 2);
+
+      final double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      final double distanceInMeters = earthRadius * c;
+
+      // 5. Calculate ETA based on the randomized distance
+      // Using 7.0 m/s (~25 km/h) for typical inner-city traffic navigation
+      const double cityTrafficSpeedMps = 7.0;
+      final double timeInSeconds = distanceInMeters / cityTrafficSpeedMps;
+      final int timeInMinutes = (timeInSeconds / 60).round();
+
+      return '${timeInMinutes < 1 ? 1 : timeInMinutes} min';
+    } catch (e) {
+      print('Error calculating realEstamitedTimeText: $e');
+      return '2 min';
+    }
+  }
+
+  String get formatedEstamitedTime {
+    int parsedtime = (double.tryParse(estimatedTime ?? '0') ?? 0).floor();
+
+    DateTime parsedDate = DateTime.parse(
+        DateTime.now().add(Duration(minutes: parsedtime)).toIso8601String());
+    return '${parsedDate.hour}:${parsedDate.minute}';
+  }
 
   //time in hh:mm from 2026-05-25T03:00:00.000000Z
   // 1. Getter لجلب التاريخ بصيغة yyyy-MM-dd
@@ -309,6 +438,11 @@ class TripDetails {
           : json['scheduled_at'];
       entrance = json['entrance'];
       intermediateAddresses = json['intermediate_addresses'];
+      closestPcikupPoint = json['closest_pickup_point'] != null
+          ? (json['closest_pickup_point'] as List<dynamic>)
+              .map((e) => (e as num).toDouble())
+              .toList()
+          : null;
       encodedPolyline = json['encoded_polyline'];
       customerAvgRating = json['customer_avg_rating'];
       driverAvgRating = json['driver_avg_rating'];
@@ -335,7 +469,7 @@ class TripDetails {
       returnTime = json['return_time'];
       parcelCompleteTime = json['parcel_complete_time'];
       isCarpool = json['is_carpool'] == true || json['is_carpool'] == 1;
-      distanceText = json['distance_text']?.toString();
+      distanceTexttt = json['distance_text']?.toString();
 
       print('=== TripDetails.fromJson completed successfully ===');
     } catch (e) {
@@ -502,7 +636,11 @@ class PickupCoordinates {
 
   PickupCoordinates.fromJson(Map<String, dynamic> json) {
     type = json['type'];
-    coordinates = json['coordinates'].cast<double>();
+    coordinates = json['coordinates'] != null
+        ? (json['coordinates'] as List<dynamic>)
+            .map((e) => (e as num).toDouble())
+            .toList()
+        : null;
   }
 
   Map<String, dynamic> toJson() {

@@ -34,7 +34,7 @@ class _CarpoolPaymentDetailsScreenState
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
-  
+
   File? _screenshot;
   bool _isSubmitting = false;
   int _currentStep = 0;
@@ -186,8 +186,7 @@ class _CarpoolPaymentDetailsScreenState
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
-                    onPressed: () =>
-                        Get.offAll(() => const DashboardScreen()),
+                    onPressed: () => Get.offAll(() => const DashboardScreen()),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.black,
                       foregroundColor: Colors.white,
@@ -328,7 +327,8 @@ class _PaymentAppBar extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.black,
                       borderRadius: BorderRadius.circular(4),
@@ -379,8 +379,7 @@ class _PriceSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool hasProration = proration != null;
-    final double totalFare =
-        (proration?['total_fare'] as num?)?.toDouble() ?? totalPrice.toDouble();
+    final double totalFare = totalPrice.toDouble();
     final int? remainingDays = proration?['remaining_days'] as int?;
     final int? totalDays = proration?['total_days_in_month'] as int?;
     final double? prorationRatio =
@@ -417,14 +416,16 @@ class _PriceSummaryCard extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: const Row(
                     children: [
-                      Icon(Icons.pending_actions, size: 12, color: Colors.white),
+                      Icon(Icons.pending_actions,
+                          size: 12, color: Colors.white),
                       SizedBox(width: 4),
                       Text(
                         'Pending Verification',
@@ -459,7 +460,8 @@ class _PriceSummaryCard extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.calendar_today_outlined, color: Colors.white, size: 14),
+                    const Icon(Icons.calendar_today_outlined,
+                        color: Colors.white, size: 14),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -481,7 +483,8 @@ class _PriceSummaryCard extends StatelessWidget {
             const SizedBox(height: 14),
             Row(
               children: [
-                Icon(Icons.confirmation_number_outlined, size: 13, color: Colors.white.withOpacity(0.5)),
+                Icon(Icons.confirmation_number_outlined,
+                    size: 13, color: Colors.white.withOpacity(0.5)),
                 const SizedBox(width: 6),
                 Text(
                   'Trip ID: ${tripId.substring(0, tripId.length.clamp(0, 12))}...',
@@ -792,7 +795,8 @@ class _PaymentAccountCard extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.info_outline_rounded, color: Colors.black, size: 14),
+                        const Icon(Icons.info_outline_rounded,
+                            color: Colors.black, size: 14),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -865,7 +869,8 @@ class _CopyableField extends StatelessWidget {
                     value.isNotEmpty ? value : '—',
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight: isHighlighted ? FontWeight.w900 : FontWeight.w700,
+                      fontWeight:
+                          isHighlighted ? FontWeight.w900 : FontWeight.w700,
                       color: Colors.black,
                       letterSpacing: isHighlighted ? 0.5 : 0.0,
                     ),

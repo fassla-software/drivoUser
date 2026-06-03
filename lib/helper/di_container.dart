@@ -261,10 +261,10 @@ Future<Map<String, Map<String, String>>> init() async {
 
   RideRepositoryInterface rideRepositoryInterface =
       RideRepository(apiClient: Get.find());
-  Get.lazyPut(() => rideRepositoryInterface);
+  Get.lazyPut<RideRepositoryInterface>(() => rideRepositoryInterface);
   RideServiceInterface rideServiceInterface =
       RideService(rideRepositoryInterface: Get.find());
-  Get.lazyPut(() => rideServiceInterface);
+  Get.lazyPut<RideServiceInterface>(() => rideServiceInterface);
 
   ConfigRepositoryInterface configRepositoryInterface =
       ConfigRepository(apiClient: Get.find(), sharedPreferences: Get.find());
@@ -329,20 +329,23 @@ Future<Map<String, Map<String, String>>> init() async {
 
 Get.lazyPut<PoolInterface>(
   () => PoolRepository(apiClient: Get.find()),
+  fenix: true,
 );
 
 Get.lazyPut<PoolService>(
   () => PoolService(poolRepository: Get.find<PoolInterface>()),
+  fenix: true,
 );
 
 Get.lazyPut<PoolStopPickupController>(
   () => PoolStopPickupController(poolService: Get.find<PoolService>()),
+  fenix: true,
 );
   Get.lazyPut(() => CarPollRideController(
         rideServiceInterface: Get.find(),
-      ));
+      ), fenix: true);
 
-  Get.lazyPut(() => CarpollMapController());
+  Get.lazyPut(() => CarpollMapController(), fenix: true);
 
   // Retrieving localized data
   Map<String, Map<String, String>> languages = {};

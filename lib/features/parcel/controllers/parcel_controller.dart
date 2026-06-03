@@ -6,10 +6,23 @@ import 'package:ride_sharing_user_app/data/api_client.dart';
 import 'package:ride_sharing_user_app/features/parcel/domain/models/parcel_category_model.dart';
 import 'package:ride_sharing_user_app/features/parcel/domain/models/parcel_list_model.dart';
 import 'package:ride_sharing_user_app/features/parcel/domain/models/suggested_vehicle_category_model.dart';
+import 'package:ride_sharing_user_app/features/map/screens/map_screen.dart';
 import 'package:ride_sharing_user_app/features/parcel/domain/services/parcel_service_interface.dart';
 import 'package:ride_sharing_user_app/features/payment/controllers/payment_controller.dart';
 
-enum ParcelDeliveryState{initial, parcelInfoDetails, addOtherParcelDetails, riseFare, findingRider, suggestVehicle, acceptRider, otpSent, parcelOngoing, parcelComplete}
+enum ParcelDeliveryState {
+  initial,
+  parcelInfoDetails,
+  addOtherParcelDetails,
+  riseFare,
+  findingRider,
+  suggestVehicle,
+  acceptRider,
+  otpSent,
+  parcelOngoing,
+  parcelComplete
+}
+
 ParcelListModel? parcelTripDetails;
 
 enum ParcelTripState {
@@ -20,18 +33,22 @@ enum ParcelTripState {
   ongoing,
   completed
 }
+
 ParcelTripState currentParcelTripState = ParcelTripState.initial;
 
-class ParcelController extends GetxController with GetSingleTickerProviderStateMixin implements GetxService {
+class ParcelController extends GetxController
+    with GetSingleTickerProviderStateMixin
+    implements GetxService {
   final ParcelServiceInterface parcelServiceInterface;
   ParcelController({required this.parcelServiceInterface});
-@override
-Future<Response> currentRideStatus(String type) async {
-  final ApiClient apiClient = Get.find<ApiClient>();
-  return await apiClient.getData(
-    '/api/customer/ride/ride-resume-status?type=$type',
-  );
-}
+  @override
+  Future<Response> currentRideStatus(String type) async {
+    final ApiClient apiClient = Get.find<ApiClient>();
+    return await apiClient.getData(
+      '/api/customer/ride/ride-resume-status?type=$type',
+    );
+  }
+
   ParcelDeliveryState currentParcelState = ParcelDeliveryState.initial;
   late TabController tabController = TabController(length: 2, vsync: this);
   bool isLoading = false;
@@ -73,63 +90,69 @@ Future<Response> currentRideStatus(String type) async {
   String? get getSenderCountryCode => _senderCountryDialCode;
   String? get getReceiverCountryDialCode => _receiverCountryDialCode;
 
-  String? get getSenderContactNumber => '$_senderCountryDialCode${senderContactController.text}';
-  String? get getReceiverContactNumber => '$_receiverCountryDialCode${receiverContactController.text}';
+  String? get getSenderContactNumber =>
+      '$_senderCountryDialCode${senderContactController.text}';
+  String? get getReceiverContactNumber =>
+      '$_receiverCountryDialCode${receiverContactController.text}';
 
   void onChangeSenderCountryCode(String? code, {bool isUpdate = true}) {
     _senderCountryDialCode = code;
 
-    if(isUpdate) {
+    if (isUpdate) {
       update();
     }
   }
-  
+
   void onChangeReceiverCountryCode(String? code) {
     _receiverCountryDialCode = code;
     update();
   }
-  
-Future<Response?> getCurrentParcelRide() async {
-  Response response =
-      await currentRideStatus("parcel");
 
-  if (response.statusCode == 200 &&
-      response.body != null &&
-      response.body['data'] != null) {
+  Future<Response?> getCurrentParcelRide() async {
+    Response response = await currentRideStatus("parcel");
 
-    parcelTripDetails = ParcelListModel.fromJson(response.body);
+    if (response.statusCode == 200 &&
+        response.body != null &&
+        response.body['data'] != null) {
+      parcelTripDetails = ParcelListModel.fromJson(response.body);
 
-    String status = response.body['data']['current_status'];
+      String status = response.body['data']['current_status'];
 
-    if (status == 'pending') {
-      currentParcelTripState = ParcelTripState.findingDriver;
-    } 
-    else if (status == 'accepted') {
-      currentParcelTripState = ParcelTripState.acceptRider;
-    } 
-    else if (status == 'ongoing') {
-      currentParcelTripState = ParcelTripState.ongoing;
-    } 
-    else if (status == 'completed') {
-      currentParcelTripState = ParcelTripState.completed;
+      if (status == 'pending') {
+        currentParcelTripState = ParcelTripState.findingDriver;
+        currentParcelState = ParcelDeliveryState.findingRider;
+        Get.to(() => const MapScreen(fromScreen: MapScreenType.parcel));
+      } else if (status == 'accepted') {
+        currentParcelTripState = ParcelTripState.acceptRider;
+        currentParcelState = ParcelDeliveryState.acceptRider;
+        Get.to(() => const MapScreen(fromScreen: MapScreenType.parcel));
+      } else if (status == 'ongoing') {
+        currentParcelTripState = ParcelTripState.ongoing;
+        currentParcelState = ParcelDeliveryState.parcelOngoing;
+        Get.to(() => const MapScreen(fromScreen: MapScreenType.parcel));
+      } else if (status == 'completed') {
+        currentParcelTripState = ParcelTripState.completed;
+        currentParcelState = ParcelDeliveryState.parcelComplete;
+      }
     }
+
+    // 🚨 أهم جزء
+    else if (response.statusCode == 403) {
+      print("No active trip found");
+
+      parcelTripDetails = null;
+      currentParcelTripState = ParcelTripState.initial;
+    }
+
+    update();
+    return response;
   }
 
-  // 🚨 أهم جزء
-  else if (response.statusCode == 403) {
-    print("No active trip found");
-
-    parcelTripDetails = null;
-    currentParcelTripState = ParcelTripState.initial;
+  void updateParcelTripState(ParcelTripState newState) {
+    currentParcelTripState = newState;
+    update();
   }
 
-  update();
-  return response;
-}
-void updateParcelTripState(ParcelTripState newState) {
-  currentParcelTripState = newState;
-  update();
-}
   void initParcelData() {
     payReceiver = false;
     currentParcelState = ParcelDeliveryState.initial;
@@ -148,19 +171,21 @@ void updateParcelTripState(ParcelTripState newState) {
 
   void updateParcelCategoryIndex(int newIndex) {
     selectedParcelCategory = newIndex;
-    parcelTypeController.text = parcelCategoryList![selectedParcelCategory].name!;
+    parcelTypeController.text =
+        parcelCategoryList![selectedParcelCategory].name!;
     update();
   }
 
-  void updateTabControllerIndex(int newIndex){
-    tabController.index= newIndex;
+  void updateTabControllerIndex(int newIndex) {
+    tabController.index = newIndex;
     update();
   }
 
   void updateParcelDetailsStatus() {
-    if(parcelWeightController.text.isNotEmpty && parcelDimensionController.text.isNotEmpty) {
+    if (parcelWeightController.text.isNotEmpty &&
+        parcelDimensionController.text.isNotEmpty) {
       parcelDetailsAvailable = true;
-    }else {
+    } else {
       parcelDetailsAvailable = false;
     }
     update();
@@ -172,94 +197,85 @@ void updateParcelTripState(ParcelTripState newState) {
   }
 
   void updatePaymentPerson(bool newValue, {bool notify = true}) {
-    payReceiver= newValue;
-    if(newValue == true){
+    payReceiver = newValue;
+    if (newValue == true) {
       Get.find<PaymentController>().setPaymentType(0);
     }
-    if(notify){
+    if (notify) {
       update();
     }
-
   }
-
 
   String parcelPrice = '0';
 
-  Future<void> getParcelCategoryList({bool notify= true}) async {
+  Future<void> getParcelCategoryList({bool notify = true}) async {
     isLoading = true;
     Response response = await parcelServiceInterface.getParcelCategory();
-    if(response.statusCode == 200 && response.body['data'] != null){
+    if (response.statusCode == 200 && response.body['data'] != null) {
       parcelCategoryList = [];
       isLoading = false;
-      parcelCategoryList!.addAll(ParcelCategoryModel.fromJson(response.body).data!);
-      if(parcelCategoryList!.isNotEmpty) {
+      parcelCategoryList!
+          .addAll(ParcelCategoryModel.fromJson(response.body).data!);
+      if (parcelCategoryList!.isNotEmpty) {
         parcelTypeController.text = parcelCategoryList!.first.name!;
       }
-    }else{
+    } else {
       isLoading = false;
       ApiChecker.checkApi(response);
     }
     isLoading = false;
-    if(notify){
+    if (notify) {
       update();
     }
   }
 
   Future<Response> getSuggestedCategoryList() async {
-  getSuggested = true;
-  update();
+    getSuggested = true;
+    update();
 
- print('Weight: ${parcelWeightController.text}');
+    print('Weight: ${parcelWeightController.text}');
 
-  getSuggested = true;
-  update();
+    getSuggested = true;
+    update();
 
-  Response response =
-      await parcelServiceInterface
-          .getSuggestedVehicleCategory(
-    parcelWeightController.text,
-  );
-
-  print('Status Code: ${response.statusCode}');
-  print('Response Body: ${response.body}');
-
-  if (response.statusCode == 200) {
-
-    suggestedVehicleCategoryModel =
-        SuggestedVehicleCategoryModel.fromJson(
-      response.body,
+    Response response =
+        await parcelServiceInterface.getSuggestedVehicleCategory(
+      parcelWeightController.text,
     );
 
-    suggestedVehicleCategoryList =
-        suggestedVehicleCategoryModel
-                ?.data
-                ?.data ??
-            [];
+    print('Status Code: ${response.statusCode}');
+    print('Response Body: ${response.body}');
 
-  } else {
+    if (response.statusCode == 200) {
+      suggestedVehicleCategoryModel = SuggestedVehicleCategoryModel.fromJson(
+        response.body,
+      );
 
-    suggestedVehicleCategoryList = [];
+      suggestedVehicleCategoryList =
+          suggestedVehicleCategoryModel?.data?.data ?? [];
+    } else {
+      suggestedVehicleCategoryList = [];
 
-    ApiChecker.checkApi(response);
+      ApiChecker.checkApi(response);
+    }
+
+    getSuggested = false;
+
+    update();
+
+    return response;
   }
-
-  getSuggested = false;
-
-  update();
-
-  return response;
-}
 
   ParcelListModel? parcelListModel;
   Future<Response> getOngoingParcelList() async {
     isLoading = true;
     Response response = await parcelServiceInterface.getOnGoingParcelList(1);
-    if(response.statusCode == 200 ){
+    if (response.statusCode == 200) {
       isLoading = false;
-      if(response.body['data'] != null){
+      if (response.body['data'] != null) {
         parcelListModel = ParcelListModel.fromJson(response.body);
       }
-    }else{
+    } else {
       isLoading = false;
       ApiChecker.checkApi(response);
     }
@@ -268,7 +284,7 @@ void updateParcelTripState(ParcelTripState newState) {
     return response;
   }
 
-  void clearParcelModel(){
+  void clearParcelModel() {
     parcelListModel = null;
   }
 
@@ -276,12 +292,12 @@ void updateParcelTripState(ParcelTripState newState) {
   Future<Response> getUnpaidParcelList() async {
     isLoading = true;
     Response response = await parcelServiceInterface.getUnpaidParcelList(1);
-    if(response.statusCode == 200 ){
+    if (response.statusCode == 200) {
       isLoading = false;
-      if(response.body['data'] != null){
+      if (response.body['data'] != null) {
         unpaidParcelListModel = ParcelListModel.fromJson(response.body);
       }
-    }else{
+    } else {
       isLoading = false;
       ApiChecker.checkApi(response);
     }
@@ -290,9 +306,9 @@ void updateParcelTripState(ParcelTripState newState) {
     return response;
   }
 
-
-  Future<void> focusOnBottomSheet(GlobalKey<ExpandableBottomSheetState> key) async {
-    if(key.currentState?.expansionStatus == ExpansionStatus.expanded) {
+  Future<void> focusOnBottomSheet(
+      GlobalKey<ExpandableBottomSheetState> key) async {
+    if (key.currentState?.expansionStatus == ExpansionStatus.expanded) {
       // ignore: invalid_use_of_protected_member
       key.currentState?.reassemble();
       await Future.delayed(const Duration(milliseconds: 500));
@@ -300,13 +316,13 @@ void updateParcelTripState(ParcelTripState newState) {
     key.currentState?.expand();
   }
 
-  void setParcelLoadingActive (int index){
+  void setParcelLoadingActive(int index) {
     parcelListModel!.data![index].isLoading = true;
     update();
   }
-  void setParcelLoadingDeactive (int index){
+
+  void setParcelLoadingDeactive(int index) {
     parcelListModel!.data![index].isLoading = false;
     update();
   }
-
 }

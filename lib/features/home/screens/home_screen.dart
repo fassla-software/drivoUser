@@ -34,7 +34,6 @@ import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/util/images.dart';
 import 'package:ride_sharing_user_app/util/styles.dart';
 
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -142,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
     await Get.find<RideController>().getCurrentRideCarpool(type: "carpool");
 
     await Get.find<RideController>().getCurrentRide();
-    
+
     if (Get.find<RideController>().currentTripDetails != null) {
       Get.find<RideController>().getBiddingList(
           Get.find<RideController>().currentTripDetails!.id!, 1);
@@ -198,22 +197,22 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: GetBuilder<RideController>(builder: (rideController) {
         return GetBuilder<ParcelController>(builder: (parcelController) {
-          
- int parcelRideCount =
-    (Get.find<ParcelController>().currentParcelState ==
-            ParcelDeliveryState.findingRider ||
-        Get.find<ParcelController>().currentParcelState ==
-            ParcelDeliveryState.acceptRider ||
-        Get.find<ParcelController>().currentParcelState ==
-            ParcelDeliveryState.otpSent ||
-        Get.find<ParcelController>().currentParcelState ==
-            ParcelDeliveryState.parcelOngoing ||
-        Get.find<ParcelController>().currentParcelState ==
-            ParcelDeliveryState.parcelComplete)
-        ? 1
-        : 0;
-                        int rideCount = (rideController.rideDetails != null &&
-                  // rideController.rideDetails!.type == 'ride_request' &&
+          int parcelRideCount =
+              //  rideController.rideDetails?.type == 'parcel' &&
+              (Get.find<ParcelController>().currentParcelState ==
+                          ParcelDeliveryState.findingRider ||
+                      Get.find<ParcelController>().currentParcelState ==
+                          ParcelDeliveryState.acceptRider ||
+                      Get.find<ParcelController>().currentParcelState ==
+                          ParcelDeliveryState.otpSent ||
+                      Get.find<ParcelController>().currentParcelState ==
+                          ParcelDeliveryState.parcelOngoing ||
+                      Get.find<ParcelController>().currentParcelState ==
+                          ParcelDeliveryState.parcelComplete)
+                  ? 1
+                  : 0;
+          int rideCount = (rideController.rideDetails != null &&
+                  rideController.rideDetails!.type == 'ride_request' &&
                   (rideController.rideDetails!.currentStatus == 'pending' ||
                       rideController.rideDetails!.currentStatus == 'accepted' ||
                       rideController.rideDetails!.currentStatus == 'ongoing' ||
@@ -414,76 +413,94 @@ class _HomeScreenState extends State<HomeScreen> {
                                           const SizedBox(
                                               height:
                                                   Dimensions.paddingSizeLarge),
-                                                  InkWell(
-  onTap: () {
-    Get.to(() => const ParcelScreen());
-  },
-  child: Container(
-    margin: const EdgeInsets.symmetric(
-      horizontal: Dimensions.paddingSize,
-      vertical: 10,
-    ),
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Theme.of(context).cardColor,
-      borderRadius: BorderRadius.circular(14),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.08),
-          blurRadius: 10,
-          offset: const Offset(0, 4),
-        ),
-      ],
-    ),
-    child: Row(
-      children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            Icons.inventory_2_outlined,
-            color: Theme.of(context).primaryColor,
-          ),
-        ),
-
-        const SizedBox(width: 12),
-
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Parcels",
-                style: textRegular.copyWith(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                "View and manage your parcels",
-                style: textRegular.copyWith(
-                  fontSize: 12,
-                  color: Theme.of(context).hintColor,
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        Icon(
-          Icons.arrow_forward_ios,
-          size: 16,
-          color: Theme.of(context).hintColor,
-        ),
-      ],
-    ),
-  ),
-),
+                                          InkWell(
+                                            onTap: () {
+                                              Get.to(
+                                                  () => const ParcelScreen());
+                                            },
+                                            child: Container(
+                                              margin:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal:
+                                                    Dimensions.paddingSize,
+                                                vertical: 10,
+                                              ),
+                                              padding: const EdgeInsets.all(16),
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    Theme.of(context).cardColor,
+                                                borderRadius:
+                                                    BorderRadius.circular(14),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black
+                                                        .withOpacity(0.08),
+                                                    blurRadius: 10,
+                                                    offset: const Offset(0, 4),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  Container(
+                                                    width: 50,
+                                                    height: 50,
+                                                    decoration: BoxDecoration(
+                                                      color: Theme.of(context)
+                                                          .primaryColor
+                                                          .withOpacity(0.1),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
+                                                    ),
+                                                    child: Icon(
+                                                      Icons
+                                                          .inventory_2_outlined,
+                                                      color: Theme.of(context)
+                                                          .primaryColor,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 12),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          "Parcels",
+                                                          style: textRegular
+                                                              .copyWith(
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight.w600,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                            height: 4),
+                                                        Text(
+                                                          "View and manage your parcels",
+                                                          style: textRegular
+                                                              .copyWith(
+                                                            fontSize: 12,
+                                                            color: Theme.of(
+                                                                    context)
+                                                                .hintColor,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  Icon(
+                                                    Icons.arrow_forward_ios,
+                                                    size: 16,
+                                                    color: Theme.of(context)
+                                                        .hintColor,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
                                           const BannerView(),
                                           // const Padding(
                                           //   padding: EdgeInsets.only(
@@ -500,7 +517,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 height: Dimensions
                                                     .paddingSizeDefault)
                                           ],
-                                          
                                         ]),
                                       ),
                                       const SizedBox(
@@ -532,66 +548,64 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
 
-Positioned(
-  top: Get.height * 0.15, // 👈 هنا التحكم في التلت العلوي
-  right: 0,
-  child: GestureDetector(
-    onTap: () {
-      setState(() {
-        parcelClickedMenu = true;
-      });
-    },
-    onHorizontalDragEnd: (DragEndDetails details) {
-      _onHorizontalDrag(details);
-    },
-    child: Stack(
-      children: [
-        SizedBox(
-          width: 70,
-          child: Image.asset(
-            Images.homeMapIcon,
-            color: Theme.of(context).primaryColor,
-          ),
-        ),
-
-        Positioned(
-          top: 0,
-          bottom: 15,
-          left: 35,
-          child: Icon(
-            Icons.inventory_2_outlined,
-            size: 18,
-            color: const Color.fromARGB(255, 255, 255, 255),
-          ),
-        ),
-
-        Positioned(
-          bottom: 85,
-          right: 5,
-          child: Container(
-            width: 20,
-            height: 20,
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-              color: const Color.fromARGB(255, 0, 0, 0),
-              borderRadius: BorderRadius.circular(50),
-            ),
-            child: Center(
-              child: Text(
-                '$parcelRideCount',
-                style: textRegular.copyWith(
-                  color: Colors.white,
-                  fontSize: Dimensions.fontSizeExtraSmall,
+            Positioned(
+              top: Get.height * 0.15, // 👈 هنا التحكم في التلت العلوي
+              right: 0,
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    parcelClickedMenu = true;
+                  });
+                },
+                onHorizontalDragEnd: (DragEndDetails details) {
+                  _onHorizontalDrag(details);
+                },
+                child: Stack(
+                  children: [
+                    SizedBox(
+                      width: 70,
+                      child: Image.asset(
+                        Images.homeMapIcon,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                    Positioned(
+                      top: 0,
+                      bottom: 15,
+                      left: 35,
+                      child: Icon(
+                        Icons.inventory_2_outlined,
+                        size: 18,
+                        color: const Color.fromARGB(255, 255, 255, 255),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 85,
+                      right: 5,
+                      child: Container(
+                        width: 20,
+                        height: 20,
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: const Color.fromARGB(255, 0, 0, 0),
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '$parcelRideCount',
+                            style: textRegular.copyWith(
+                              color: Colors.white,
+                              fontSize: Dimensions.fontSizeExtraSmall,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ),
-        ),
-      ],
-    ),
-  ),
-),
-        // Ongoing ride/parcel indicator
+            // Ongoing ride/parcel indicator
             Positioned(
                 child: Align(
               alignment: Alignment.topRight,
@@ -817,117 +831,119 @@ Positioned(
                   }),
                 ),
               )),
-           if (parcelClickedMenu)
-  Positioned(
-    top: Get.height * 0.2, // 👈 نفس مكان الأيقونة (التلت العلوي)
-    right: 0,
-    child: GetBuilder<RideController>(
-      builder: (rideController) {
-        return GetBuilder<ParcelController>(
-          builder: (parcelController) {
-            return Container(
-              width: 220,
-              height: 70,
-              decoration: BoxDecoration(
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(context).hintColor.withOpacity(.5),
-                    blurRadius: 1,
-                    spreadRadius: 1,
-                    offset: const Offset(1, 1),
-                  )
-                ],
-                borderRadius: const BorderRadius.horizontal(
-                  left: Radius.circular(10),
-                ),
-                color: Theme.of(context).cardColor,
-              ),
-              child: Row(
-                children: [
-                  InkWell(
-                    onTap: () {
-                      setState(() {
-                        parcelClickedMenu = false;
-                      });
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(
-                        Dimensions.paddingSizeSmall,
-                      ),
-                      child: Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        color: Theme.of(context).hintColor,
-                        size: Dimensions.iconSizeMedium,
-                      ),
-                    ),
-                  ),
-
-                  Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: Dimensions.paddingSizeDefault,
-                        ),
-                       child: InkWell(
- onTap: () async {
-await parcelController.getCurrentParcelRide(
-                                      );
-  setState(() {
-    parcelClickedMenu = false;
-  });                 
-
-                          },
-                          child: Container(
-                            width: 150,
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Theme.of(context)
-                                    .primaryColor
-                                    .withOpacity(.5),
-                              ),
-                              borderRadius: BorderRadius.circular(10),
-                              color: Theme.of(context)
-                                  .primaryColor
-                                  .withOpacity(.125),
+            if (parcelClickedMenu)
+              Positioned(
+                top: Get.height * 0.2, // 👈 نفس مكان الأيقونة (التلت العلوي)
+                right: 0,
+                child: GetBuilder<RideController>(
+                  builder: (rideController) {
+                    return GetBuilder<ParcelController>(
+                      builder: (parcelController) {
+                        return Container(
+                          width: 220,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            boxShadow: [
+                              BoxShadow(
+                                color:
+                                    Theme.of(context).hintColor.withOpacity(.5),
+                                blurRadius: 1,
+                                spreadRadius: 1,
+                                offset: const Offset(1, 1),
+                              )
+                            ],
+                            borderRadius: const BorderRadius.horizontal(
+                              left: Radius.circular(10),
                             ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                            color: Theme.of(context).cardColor,
+                          ),
+                          child: Row(
+                            children: [
+                              InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    parcelClickedMenu = false;
+                                  });
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(
+                                    Dimensions.paddingSizeSmall,
+                                  ),
+                                  child: Icon(
+                                    Icons.arrow_forward_ios_rounded,
+                                    color: Theme.of(context).hintColor,
+                                    size: Dimensions.iconSizeMedium,
+                                  ),
+                                ),
+                              ),
+                              Column(
                                 children: [
-                                  
-                                  Text('Your Parcels'.tr),
-                                  CircleAvatar(
-                                    radius: 10,
-                                    backgroundColor:
-                                        Theme.of(context).colorScheme.error,
-                                    child: Text(
-                                      '$parcelRideCount',
-                                      style: textRegular.copyWith(
-                                        color: Theme.of(context).cardColor,
-                                        fontSize: Dimensions.fontSizeSmall,
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: Dimensions.paddingSizeDefault,
+                                    ),
+                                    child: InkWell(
+                                      onTap: () async {
+                                        await parcelController
+                                            .getCurrentParcelRide();
+                                        setState(() {
+                                          parcelClickedMenu = false;
+                                        });
+                                      },
+                                      child: Container(
+                                        width: 150,
+                                        decoration: BoxDecoration(
+                                          border: Border.all(
+                                            color: Theme.of(context)
+                                                .primaryColor
+                                                .withOpacity(.5),
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          color: Theme.of(context)
+                                              .primaryColor
+                                              .withOpacity(.125),
+                                        ),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text('Your Parcels'.tr),
+                                              CircleAvatar(
+                                                radius: 10,
+                                                backgroundColor:
+                                                    Theme.of(context)
+                                                        .colorScheme
+                                                        .error,
+                                                child: Text(
+                                                  '$parcelRideCount',
+                                                  style: textRegular.copyWith(
+                                                    color: Theme.of(context)
+                                                        .cardColor,
+                                                    fontSize: Dimensions
+                                                        .fontSizeSmall,
+                                                  ),
+                                                ),
+                                              )
+                                            ],
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                  )
+                                  ),
                                 ],
                               ),
-                            ),
+                            ],
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
-            );
-          },
-        );
-      },
-    ),
-  ),
-          
-      
+
             // Clicked menu overlay
             if (clickedMenu)
               Positioned(
@@ -1069,7 +1085,6 @@ await parcelController.getCurrentParcelRide(
       }),
     );
   }
-
 
   void _onHorizontalDrag(DragEndDetails details) {
     if (details.primaryVelocity == 0) return;

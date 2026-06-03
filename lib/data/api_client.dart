@@ -54,7 +54,7 @@ class ApiClient extends GetxService {
       'Authorization': 'Bearer $token',
     });
     if (kDebugMode) {
-      print('====> API Call: Zone: ${address?.zoneId ?? ''}');
+      log('====> API Call: Zone: ${address?.zoneId ?? ''}');
     }
 
     _mainHeaders = header;
@@ -64,7 +64,7 @@ class ApiClient extends GetxService {
       {Map<String, dynamic>? query, Map<String, String>? headers}) async {
     try {
       if (kDebugMode) {
-        print('====> API Call: $uri\nHeader: $_mainHeaders');
+        log('====> API Call: $uri\nHeader: $_mainHeaders');
       }
       http.Response response = await http
           .get(
@@ -132,9 +132,8 @@ class ApiClient extends GetxService {
       {Map<String, String>? headers}) async {
     try {
       if (kDebugMode) {
-        print('====> API Call: $uri\nHeader: $_mainHeaders');
-        print(
-            '====> API Body: $body with ${multipartBody.length} picture and ${profile.key}');
+        log('====> API Call: $uri\nHeader: $_mainHeaders');
+        log('====> API Body: $body with ${multipartBody.length} picture and ${profile.key}');
       }
       http.MultipartRequest request =
           http.MultipartRequest('POST', Uri.parse(appBaseUrl + uri));
@@ -196,7 +195,7 @@ class ApiClient extends GetxService {
       {Map<String, String>? headers}) async {
     try {
       if (kDebugMode) {
-        print('====> API Call: $uri\nHeader: $_mainHeaders');
+        log('====> API Call: $uri\nHeader: $_mainHeaders');
       }
       http.Response response = await http
           .delete(

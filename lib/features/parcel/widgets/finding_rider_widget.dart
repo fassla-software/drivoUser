@@ -13,6 +13,7 @@ import 'package:ride_sharing_user_app/util/dimensions.dart';
 import 'package:ride_sharing_user_app/util/images.dart';
 import 'package:ride_sharing_user_app/util/styles.dart';
 import 'package:ride_sharing_user_app/helper/price_converter.dart';
+import 'package:ride_sharing_user_app/helper/display_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:math' as math;
@@ -331,13 +332,16 @@ class _FindingRiderWidgetState extends State<FindingRiderWidget> {
                                         );
 
                                         // Get the trip ID safely
-                                        String? tripId =
-                                            rideController.tripDetails?.id;
+                                        String? tripId = widget.fromPage == FindingRide.parcel
+                                            ? ((parcelTripDetails?.data != null && parcelTripDetails!.data!.isNotEmpty)
+                                                ? parcelTripDetails!.data!.first.id
+                                                : null)
+                                            : rideController.tripDetails?.id;
 
                                         if (tripId == null) {
-                                          Get.snackbar(
-                                            'Error',
+                                          showCustomSnackBar(
                                             'No trip ID found',
+                                            isError: true,
                                           );
                                           return;
                                         }
@@ -351,10 +355,16 @@ class _FindingRiderWidgetState extends State<FindingRiderWidget> {
                                         )
                                             .then((value) {
                                           if (value?.statusCode == 200) {
-                                            rideController
-                                                .updateRideCurrentState(
-                                              RideState.initial,
-                                            );
+                                            if (widget.fromPage == FindingRide.parcel) {
+                                              parcelController.updateParcelState(ParcelDeliveryState.initial);
+                                              parcelController.updateParcelTripState(ParcelTripState.initial);
+                                              parcelTripDetails = null;
+                                            } else {
+                                              rideController
+                                                  .updateRideCurrentState(
+                                                RideState.initial,
+                                              );
+                                            }
                                             Get.find<MapController>()
                                                 .notifyMapController();
                                             Get.find<RideController>()
@@ -516,11 +526,9 @@ class _CarpoolPendingWidgetState extends State<_CarpoolPendingWidget>
         // Check if location services are enabled
         bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
         if (!serviceEnabled) {
-          Get.snackbar(
-            'Location Services Disabled',
+          showCustomSnackBar(
             'Please enable location services to get directions.',
-            backgroundColor: Colors.orange,
-            colorText: Colors.white,
+            isError: true,
           );
           return;
         }
@@ -530,22 +538,18 @@ class _CarpoolPendingWidgetState extends State<_CarpoolPendingWidget>
         if (permission == LocationPermission.denied) {
           permission = await Geolocator.requestPermission();
           if (permission == LocationPermission.denied) {
-            Get.snackbar(
-              'Location Permission Denied',
+            showCustomSnackBar(
               'Please grant location permission to get directions.',
-              backgroundColor: Colors.orange,
-              colorText: Colors.white,
+              isError: true,
             );
             return;
           }
         }
 
         if (permission == LocationPermission.deniedForever) {
-          Get.snackbar(
-            'Location Permission Required',
+          showCustomSnackBar(
             'Location permissions are permanently denied. Please enable in settings.',
-            backgroundColor: Colors.red,
-            colorText: Colors.white,
+            isError: true,
           );
           return;
         }
@@ -578,20 +582,16 @@ class _CarpoolPendingWidgetState extends State<_CarpoolPendingWidget>
           await launchUrl(Uri.parse(fallbackUrl),
               mode: LaunchMode.externalApplication);
         } else {
-          Get.snackbar(
-            'Error',
+          showCustomSnackBar(
             'Could not open Google Maps. Please install Google Maps app.',
-            backgroundColor: Colors.red,
-            colorText: Colors.white,
+            isError: true,
           );
         }
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
+      showCustomSnackBar(
         'Could not open Google Maps. Please try again.',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+        isError: true,
       );
     }
   }

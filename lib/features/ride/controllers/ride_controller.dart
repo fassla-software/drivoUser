@@ -11,6 +11,7 @@ import 'package:ride_sharing_user_app/features/ride/domain/models/bidding_model.
 import 'package:ride_sharing_user_app/features/ride/domain/models/estimated_fare_model.dart';
 import 'package:ride_sharing_user_app/features/ride/domain/models/final_fare_model.dart';
 import 'package:ride_sharing_user_app/features/ride/domain/models/nearest_driver_model.dart';
+import 'package:ride_sharing_user_app/features/ride/screens/carpool_active_trips_screen.dart';
 import 'package:ride_sharing_user_app/features/ride/domain/models/remaining_distance_model.dart';
 import 'package:ride_sharing_user_app/features/ride/domain/models/trip_details_model.dart';
 import 'package:ride_sharing_user_app/features/ride/domain/services/ride_service_interface.dart';
@@ -45,11 +46,9 @@ enum RideState {
   ongoingRide,
   completeRide
 }
-enum RideRequestType {
-  ride,
-  parcel,
-  carpool
-}
+
+enum RideRequestType { ride, parcel, carpool }
+
 String getType(RideRequestType type) {
   switch (type) {
     case RideRequestType.parcel:
@@ -767,47 +766,40 @@ class RideController extends GetxController implements GetxService {
     Response? response = await rideServiceInterface.currentRideStatus(type);
     if (response?.statusCode == 200 && response?.body['data'] != null) {
       runningTrip = false;
-      carpoolTripDetails = TripDetailsModel.fromJson(response!.body).data!;
-      estimatedDistance = carpoolTripDetails!.estimatedDistance!.toString();
-      String currentRideStatus = carpoolTripDetails!.currentStatus!;
-      encodedPolyLine = carpoolTripDetails!.encodedPolyline ?? '';
-
-      if (currentRideStatus == AppConstants.accepted ||
-          currentRideStatus == AppConstants.ongoing) {
-        updateRideCurrentState(currentRideStatus == AppConstants.accepted
-            ? RideState.acceptingRider
-            : RideState.ongoingRide);
-        Get.find<MapController>().notifyMapController();
-        if (navigateToMap) {
-          Get.to(() => const MapScreen(fromScreen: MapScreenType.splash));
-        }
-      } else if (currentRideStatus == AppConstants.pending) {
-        Get.find<RideController>()
-            .updateRideCurrentState(RideState.findingRider);
-        Get.find<RideController>().getBiddingList(carpoolTripDetails!.id!, 1);
-        Get.find<MapController>().notifyMapController();
-        if (navigateToMap) {
-          Get.to(() => const MapScreen(fromScreen: MapScreenType.splash));
-        }
-      } else if (currentRideStatus == AppConstants.completed ||
-          currentRideStatus == AppConstants.cancelled) {
-        if (carpoolTripDetails!.type != 'carpool') {
-          getFinalFare(carpoolTripDetails!.id!);
-          Get.off(() => const PaymentScreen());
-        } else {
-          Get.offAll(() => const DashboardScreen());
-        }
+      var responseData = response!.body['data'];
+      List<TripDetails> trips = [];
+      if (responseData is List) {
+        trips = responseData.map((e) => TripDetails.fromJson(e)).toList();
       } else {
+        trips = [TripDetails.fromJson(responseData)];
+      }
+
+      if (trips.isEmpty) {
+        carpoolTripDetails = null;
         if (Get.find<LocationController>().getUserAddress() != null) {
           if (!fromRefresh) {
             Get.offAll(() => const DashboardScreen());
           }
         } else {
-          Get.offAll(() => const AccessLocationScreen());
+          Get.to(() => const AccessLocationScreen());
         }
+      } else if (trips.length == 1) {
+        _processSingleCarpoolTrip(trips.first, fromRefresh, navigateToMap);
+      } else {
+        // Multiple trips
+        trips.sort((a, b) {
+          DateTime timeA =
+              DateTime.tryParse(a.createdAt ?? '') ?? DateTime.now();
+          DateTime timeB =
+              DateTime.tryParse(b.createdAt ?? '') ?? DateTime.now();
+          return timeA.compareTo(timeB); // Closest one first
+        });
+        Get.to(() => CarpoolActiveTripsScreen(
+              trips: trips,
+              fromRefresh: fromRefresh,
+              navigateToMap: navigateToMap,
+            ));
       }
-      tripDetails = carpoolTripDetails;
-      carpollRouteId = null;
     } else {
       runningTrip = false;
       carpoolTripDetails = null;
@@ -821,6 +813,56 @@ class RideController extends GetxController implements GetxService {
     }
     update();
     return response;
+  }
+
+  void _processSingleCarpoolTrip(
+      TripDetails trip, bool fromRefresh, bool navigateToMap) {
+    carpoolTripDetails = trip;
+    estimatedDistance = carpoolTripDetails!.estimatedDistance!.toString();
+    String currentRideStatus = carpoolTripDetails!.currentStatus!;
+    encodedPolyLine = carpoolTripDetails!.encodedPolyline ?? '';
+
+    if (currentRideStatus == AppConstants.accepted ||
+        currentRideStatus == AppConstants.ongoing) {
+      updateRideCurrentState(currentRideStatus == AppConstants.accepted
+          ? RideState.acceptingRider
+          : RideState.ongoingRide);
+      Get.find<MapController>().notifyMapController();
+      if (navigateToMap) {
+        Get.to(() => const MapScreen(fromScreen: MapScreenType.splash));
+      }
+    } else if (currentRideStatus == AppConstants.pending) {
+      Get.find<RideController>().updateRideCurrentState(RideState.findingRider);
+      Get.find<RideController>().getBiddingList(carpoolTripDetails!.id!, 1);
+      Get.find<MapController>().notifyMapController();
+      if (navigateToMap) {
+        Get.to(() => const MapScreen(fromScreen: MapScreenType.splash));
+      }
+    } else if (currentRideStatus == AppConstants.completed ||
+        currentRideStatus == AppConstants.cancelled) {
+      if (carpoolTripDetails!.type != 'carpool') {
+        getFinalFare(carpoolTripDetails!.id!);
+        Get.off(() => const PaymentScreen());
+      } else {
+        Get.offAll(() => const DashboardScreen());
+      }
+    } else {
+      if (Get.find<LocationController>().getUserAddress() != null) {
+        if (!fromRefresh) {
+          Get.offAll(() => const DashboardScreen());
+        }
+      } else {
+        Get.offAll(() => const AccessLocationScreen());
+      }
+    }
+    tripDetails = carpoolTripDetails;
+    carpollRouteId = null;
+    update();
+  }
+
+  void processSelectedCarpoolTrip(
+      TripDetails trip, bool fromRefresh, bool navigateToMap) {
+    _processSingleCarpoolTrip(trip, fromRefresh, navigateToMap);
   }
 
   Future<Response?> getCurrentRideCarpool(
@@ -1295,7 +1337,6 @@ class RideController extends GetxController implements GetxService {
     carpollRouteId = trip.routeId.toString();
     isLoading = true;
     update();
-
     // Show loading dialog
     Get.dialog(
       Dialog(
@@ -1313,7 +1354,7 @@ class RideController extends GetxController implements GetxService {
                 ),
               ),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 'Processing your request...',
                 style: TextStyle(
                   fontSize: 16,
@@ -1324,7 +1365,7 @@ class RideController extends GetxController implements GetxService {
           ),
         ),
       ),
-      barrierDismissible: false,
+      barrierDismissible: true,
     );
 
     try {
@@ -1332,7 +1373,7 @@ class RideController extends GetxController implements GetxService {
       final String carpoolType = (trip.carpoolType as String?) ?? 'trip';
       final String routeId = trip.routeId.toString();
       final int price = (trip.price as num?)?.toInt() ?? 0;
-      final int seats = selectedSeats;
+      final int seats = Get.find<PoolStopPickupController>().selectedSeats;
 
       // Build type-specific payload
       final Map<String, dynamic> body = _buildCarpoolRequestBody(
@@ -1344,10 +1385,18 @@ class RideController extends GetxController implements GetxService {
         bookingType: bookingType,
       );
 
-      final Response response =
+      Response response =
           await rideServiceInterface.createCarpoolRequest(body: body);
 
-      // Close loading dialog
+      // Retry if total_fare is missing
+      while (response.statusCode == 200 &&
+          response.body['data'] != null &&
+          response.body['data']['total_fare'] == null) {
+        await Future.delayed(const Duration(seconds: 1));
+        response = await rideServiceInterface.createCarpoolRequest(body: body);
+      }
+
+      // Close loading dialog before navigating!
       if (Get.isDialogOpen == true) {
         Get.back();
       }
@@ -1355,19 +1404,20 @@ class RideController extends GetxController implements GetxService {
       if (response.statusCode == 200 && response.body['data'] != null) {
         final Map<String, dynamic> data =
             response.body['data'] as Map<String, dynamic>;
-        final bool paymentRequired = data['payment_required'] == true;
+        final bool paymentRequired =
+            (data['payment_required'] ?? true) != false;
         final List<dynamic> paymentAccounts =
             (data['payment_accounts'] as List?) ?? [];
         final Map<String, dynamic>? proration =
             data['proration'] as Map<String, dynamic>?;
         final String tripId = (data['trip_id'] as String?) ?? '';
-
-        if (paymentRequired && paymentAccounts.isNotEmpty) {
+        print('payment required: $paymentRequired');
+        if (paymentRequired) {
           // Route to Instapay payment screen
-          Get.off(() => CarpoolPaymentDetailsScreen(
+          Get.to(() => CarpoolPaymentDetailsScreen(
                 tripId: tripId,
                 carpoolType: carpoolType,
-                totalPrice: price,
+                totalPrice: data['total_fare'] ?? price,
                 paymentAccounts: paymentAccounts
                     .map((e) => Map<String, dynamic>.from(e as Map))
                     .toList(),
@@ -1403,7 +1453,8 @@ class RideController extends GetxController implements GetxService {
                     const SizedBox(height: 16),
                     Text(
                       'join_successful'.tr,
-                      style: textBold.copyWith(fontSize: 18, color: Colors.black),
+                      style:
+                          textBold.copyWith(fontSize: 18, color: Colors.black),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
@@ -1475,7 +1526,8 @@ class RideController extends GetxController implements GetxService {
         tripRequestId: tripRequestId,
         screenshotPath: screenshotPath,
       );
-      if (response.statusCode == 200 && response.body['response_code'] == 'default_update_200') {
+      if (response.statusCode == 200 &&
+          response.body['response_code'] == 'default_update_200') {
         return true;
       } else {
         ApiChecker.checkApi(response);

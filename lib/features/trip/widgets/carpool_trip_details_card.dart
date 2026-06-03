@@ -61,7 +61,11 @@ class CarpoolTripDetailsCard extends StatelessWidget {
             _trackTripButton(context),
             const SizedBox(height: Dimensions.paddingSizeDefault),
           ],
-          _metaRow(context, seats),
+          GestureDetector(
+              onTap: () {
+                debugPrint('Seats:${tripDetails.riseRequestCount}');
+              },
+              child: _metaRow(context, seats)),
           const SizedBox(height: Dimensions.paddingSizeDefault),
           _routeSection(context),
           const SizedBox(height: Dimensions.paddingSizeDefault),
@@ -257,9 +261,7 @@ class CarpoolTripDetailsCard extends StatelessWidget {
     final timeText = createdAt != null && createdAt.isNotEmpty
         ? DateConverter.isoDateTimeStringToLocalTime(createdAt)
         : '—';
-    final durationText = tripDetails.estimatedTime?.isNotEmpty == true
-        ? tripDetails.estimatedTime!
-        : '';
+    final durationText = tripDetails.formatedEstamitedTimeInMinutes;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -278,12 +280,14 @@ class CarpoolTripDetailsCard extends StatelessWidget {
                 label: timeText,
               ),
             ),
-            Expanded(
-              child: _metaItem(
-                icon: Icons.people_outline,
-                label: '$seats ${'seats'.tr}',
+            if (tripDetails.type == 'carpool' &&
+                (tripDetails.riseRequestCount ?? 0) != 0)
+              Expanded(
+                child: _metaItem(
+                  icon: Icons.people_outline,
+                  label: '$seats ${'seats'.tr}',
+                ),
               ),
-            ),
           ],
         ),
         if (durationText.isNotEmpty) ...[
@@ -542,25 +546,28 @@ class CarpoolTripDetailsCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: Dimensions.paddingSizeSmall),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Total Distance'.tr,
-                  style: textRegular.copyWith(
-                    fontSize: Dimensions.fontSizeSmall,
-                    color: Colors.black87,
+          GestureDetector(
+            onTap: () {},
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Total Distance'.tr,
+                    style: textRegular.copyWith(
+                      fontSize: Dimensions.fontSizeSmall,
+                      color: Colors.black87,
+                    ),
                   ),
                 ),
-              ),
-              Text(
-                distanceText,
-                style: textSemiBold.copyWith(
-                  fontSize: Dimensions.fontSizeDefault,
-                  color: Colors.black,
+                Text(
+                  tripDetails.distanceTextt,
+                  style: textSemiBold.copyWith(
+                    fontSize: Dimensions.fontSizeDefault,
+                    color: Colors.black,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -568,9 +575,9 @@ class CarpoolTripDetailsCard extends StatelessWidget {
   }
 
   String _distanceLabel() {
-    if (tripDetails.distanceText != null &&
-        tripDetails.distanceText!.isNotEmpty) {
-      return tripDetails.distanceText!;
+    if (tripDetails.distanceTextt != null &&
+        tripDetails.distanceTextt!.isNotEmpty) {
+      return tripDetails.distanceTextt!;
     }
     final raw = tripDetails.actualDistance?.isNotEmpty == true
         ? tripDetails.actualDistance
@@ -661,7 +668,8 @@ class CarpoolTripDetailsCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.15)),
                 ),
                 child: Center(
                   child: Text(

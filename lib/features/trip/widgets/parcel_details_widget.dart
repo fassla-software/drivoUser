@@ -41,7 +41,6 @@ class ParcelDetailsWidget extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
-          
         ),
         Container(
           decoration: BoxDecoration(

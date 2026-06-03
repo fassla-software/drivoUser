@@ -162,11 +162,13 @@ class _RideExpendableBottomSheetState extends State<RideExpendableBottomSheet>
       if (!mounted) return;
       _currentBackgroundIndex =
           (_currentBackgroundIndex + 1) % _backgroundImages.length;
-      _backgroundPageController.animateToPage(
-        _currentBackgroundIndex,
-        duration: const Duration(milliseconds: 1200),
-        curve: Curves.easeInOut,
-      );
+      if (_backgroundPageController.hasClients) {
+        _backgroundPageController.animateToPage(
+          _currentBackgroundIndex,
+          duration: const Duration(milliseconds: 1200),
+          curve: Curves.easeInOut,
+        );
+      }
       setState(() {
         _floatFlip = !_floatFlip;
       });
@@ -190,182 +192,169 @@ class _RideExpendableBottomSheetState extends State<RideExpendableBottomSheet>
     return GetBuilder<RideController>(
       builder: (carRideController) {
         return Container(
-          width: MediaQuery.of(context).size.width,
-          decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(Dimensions.paddingSizeDefault),
-              topRight: Radius.circular(Dimensions.paddingSizeDefault),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(context).hintColor.withOpacity(0.3),
-                blurRadius: 20,
-                spreadRadius: 2,
-                offset: const Offset(0, -5),
+            width: MediaQuery.of(context).size.width,
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(Dimensions.paddingSizeDefault),
+                topRight: Radius.circular(Dimensions.paddingSizeDefault),
               ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              // Animated background
-              _buildAnimatedBackground(),
-
-              // Main content with glassy effect
-              ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(Dimensions.paddingSizeDefault),
-                  topRight: Radius.circular(Dimensions.paddingSizeDefault),
+              boxShadow: [
+                BoxShadow(
+                  color: Theme.of(context).hintColor.withOpacity(0.3),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                  offset: const Offset(0, -5),
                 ),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Theme.of(context).canvasColor.withOpacity(0.85),
-                          Theme.of(context).canvasColor.withOpacity(0.95),
-                        ],
-                      ),
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(Dimensions.paddingSizeDefault),
-                        topRight:
-                            Radius.circular(Dimensions.paddingSizeDefault),
-                      ),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
-                        width: 1,
-                      ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(Dimensions.paddingSizeDefault),
+                topRight: Radius.circular(Dimensions.paddingSizeDefault),
+              ),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Theme.of(context).canvasColor.withOpacity(0.85),
+                        Theme.of(context).canvasColor.withOpacity(0.95),
+                      ],
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: Dimensions.paddingSizeDefault,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Animated handle bar
-                          _buildAnimatedHandleBar(),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(Dimensions.paddingSizeDefault),
+                      topRight: Radius.circular(Dimensions.paddingSizeDefault),
+                    ),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: Dimensions.paddingSizeDefault,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Animated handle bar
+                        _buildAnimatedHandleBar(),
 
-                          const SizedBox(height: Dimensions.paddingSizeSmall),
+                        const SizedBox(height: Dimensions.paddingSizeSmall),
 
-                          // Main content
-                          GetBuilder<RideController>(
-                            builder: (rideController) {
-                              return GetBuilder<LocationController>(
-                                builder: (locationController) {
-                                  String firstRoute = '';
-                                  String secondRoute = '';
-                                  List<dynamic> extraRoute = [];
-                                  if (rideController.tripDetails
-                                              ?.intermediateAddresses !=
-                                          null &&
-                                      rideController.tripDetails
-                                              ?.intermediateAddresses !=
-                                          '["",""]') {
-                                    extraRoute = jsonDecode(
-                                      rideController
-                                          .tripDetails!.intermediateAddresses!,
-                                    );
-                                    if (extraRoute.isNotEmpty) {
-                                      firstRoute = extraRoute[0].toString();
-                                    }
-                                    if (extraRoute.isNotEmpty &&
-                                        extraRoute.length > 1) {
-                                      secondRoute = extraRoute[1].toString();
-                                    }
-                                  }
-
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: Dimensions.paddingSizeDefault,
-                                    ),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        (rideController.currentRideState ==
-                                                RideState.initial)
-                                            ? (widget.isCarpool
-                                                ? _buildCarpoolInitialWidget(
-                                                    locationController,
-                                                  )
-                                                : _buildRegularInitialWidget(
-                                                    rideController))
-                                            : (rideController
-                                                        .currentRideState ==
-                                                    RideState.riseFare)
-                                                ? _buildAnimatedWidget(
-                                                    RaiseFareBottomSheet(
-                                                    expandableKey:
-                                                        widget.expandableKey,
-                                                  ))
-                                                : (rideController
-                                                            .currentRideState ==
-                                                        RideState.findingRider)
-                                                    ? _buildAnimatedWidget(
-                                                        FindingRiderWidget(
-                                                        expandableKey: widget
-                                                            .expandableKey,
-                                                        fromPage:
-                                                            FindingRide.ride,
-                                                      ))
-                                                    : (rideController
-                                                                    .currentRideState ==
-                                                                RideState
-                                                                    .acceptingRider ||
-                                                            rideController
-                                                                    .currentRideState ==
-                                                                RideState
-                                                                    .ongoingRide)
-                                                        ? _buildAnimatedWidget(
-                                                            AcceptingAndOngoingBottomSheet(
-                                                            firstRoute:
-                                                                firstRoute,
-                                                            secondRoute:
-                                                                secondRoute,
-                                                            expandableKey: widget
-                                                                .expandableKey,
-                                                          ))
-                                                        : (rideController
-                                                                    .currentRideState ==
-                                                                RideState
-                                                                    .otpSent)
-                                                            ? _buildAnimatedWidget(
-                                                                OtpSentBottomSheet(
-                                                                firstRoute:
-                                                                    firstRoute,
-                                                                secondRoute:
-                                                                    secondRoute,
-                                                                expandableKey:
-                                                                    widget
-                                                                        .expandableKey,
-                                                              ))
-                                                            : (rideController
-                                                                        .currentRideState ==
-                                                                    RideState
-                                                                        .ongoingRide)
-                                                                ? _buildAnimatedWidget(
-                                                                    _buildOngoingRideWidget(
-                                                                        rideController))
-                                                                : const SizedBox(),
-                                      ],
-                                    ),
+                        // Main content
+                        GetBuilder<RideController>(
+                          builder: (rideController) {
+                            return GetBuilder<LocationController>(
+                              builder: (locationController) {
+                                String firstRoute = '';
+                                String secondRoute = '';
+                                List<dynamic> extraRoute = [];
+                                if (rideController.tripDetails
+                                            ?.intermediateAddresses !=
+                                        null &&
+                                    rideController.tripDetails
+                                            ?.intermediateAddresses !=
+                                        '["",""]') {
+                                  extraRoute = jsonDecode(
+                                    rideController
+                                        .tripDetails!.intermediateAddresses!,
                                   );
-                                },
-                              );
-                            },
-                          ),
-                        ],
-                      ),
+                                  if (extraRoute.isNotEmpty) {
+                                    firstRoute = extraRoute[0].toString();
+                                  }
+                                  if (extraRoute.isNotEmpty &&
+                                      extraRoute.length > 1) {
+                                    secondRoute = extraRoute[1].toString();
+                                  }
+                                }
+
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: Dimensions.paddingSizeDefault,
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      (rideController.currentRideState ==
+                                              RideState.initial)
+                                          ? (widget.isCarpool
+                                              ? _buildCarpoolInitialWidget(
+                                                  locationController,
+                                                )
+                                              : _buildRegularInitialWidget(
+                                                  rideController))
+                                          : (rideController.currentRideState ==
+                                                  RideState.riseFare)
+                                              ? _buildAnimatedWidget(
+                                                  RaiseFareBottomSheet(
+                                                  expandableKey:
+                                                      widget.expandableKey,
+                                                ))
+                                              : (rideController
+                                                          .currentRideState ==
+                                                      RideState.findingRider)
+                                                  ? _buildAnimatedWidget(
+                                                      FindingRiderWidget(
+                                                      expandableKey:
+                                                          widget.expandableKey,
+                                                      fromPage:
+                                                          FindingRide.ride,
+                                                    ))
+                                                  : (rideController
+                                                                  .currentRideState ==
+                                                              RideState
+                                                                  .acceptingRider ||
+                                                          rideController
+                                                                  .currentRideState ==
+                                                              RideState
+                                                                  .ongoingRide)
+                                                      ? _buildAnimatedWidget(
+                                                          AcceptingAndOngoingBottomSheet(
+                                                          firstRoute:
+                                                              firstRoute,
+                                                          secondRoute:
+                                                              secondRoute,
+                                                          expandableKey: widget
+                                                              .expandableKey,
+                                                        ))
+                                                      : (rideController
+                                                                  .currentRideState ==
+                                                              RideState.otpSent)
+                                                          ? _buildAnimatedWidget(
+                                                              OtpSentBottomSheet(
+                                                              firstRoute:
+                                                                  firstRoute,
+                                                              secondRoute:
+                                                                  secondRoute,
+                                                              expandableKey: widget
+                                                                  .expandableKey,
+                                                            ))
+                                                          : (rideController
+                                                                      .currentRideState ==
+                                                                  RideState
+                                                                      .ongoingRide)
+                                                              ? _buildAnimatedWidget(
+                                                                  _buildOngoingRideWidget(
+                                                                      rideController))
+                                                              : const SizedBox(),
+                                    ],
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
-            ],
-          ),
-        );
+            ));
       },
     );
   }

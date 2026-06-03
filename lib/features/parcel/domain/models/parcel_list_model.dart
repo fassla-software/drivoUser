@@ -25,9 +25,13 @@ class ParcelListModel {
     offset = json['offset'];
     if (json['data'] != null) {
       data = <TripDetails>[];
-      json['data'].forEach((v) {
-        data!.add(TripDetails.fromJson(v));
-      });
+      if (json['data'] is List) {
+        json['data'].forEach((v) {
+          data!.add(TripDetails.fromJson(v));
+        });
+      } else {
+        data!.add(TripDetails.fromJson(Map<String, dynamic>.from(json['data'])));
+      }
     }
   }
 

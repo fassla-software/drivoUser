@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:ride_sharing_user_app/util/app_constants.dart';
 import 'package:ride_sharing_user_app/common_widgets/button_widget.dart';
 import 'package:ride_sharing_user_app/common_widgets/confirmation_dialog_widget.dart';
 import 'package:ride_sharing_user_app/common_widgets/expandable_bottom_sheet.dar.dart';
@@ -42,6 +44,30 @@ class _ParcelAcceptedRideWidgetState extends State<ParcelAcceptedRideWidget> {
 
             const ActivityScreenRiderDetails(),
             const SizedBox(height: Dimensions.paddingSizeDefault),
+
+            if(rideController.tripDetails != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: Dimensions.paddingSizeDefault, vertical: Dimensions.paddingSizeSmall),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'trip_details'.tr,
+                      style: textBold.copyWith(
+                          fontSize: Dimensions.fontSizeDefault,
+                          color: Theme.of(context).primaryColor),
+                    ),
+                    ButtonWidget(
+                      fontSize: Dimensions.fontSizeSmall,
+                      buttonText: 'track_now'.tr,
+                      width: 80,
+                      height: 32,
+                      onPressed: () => launchUrl(Uri.parse(
+                          _getParcelTrackUrl(rideController.tripDetails?.refId))),
+                    ),
+                  ],
+                ),
+              ),
 
             if(rideController.tripDetails != null)
               RouteWidget(totalDistance: rideController.estimatedDistance,
@@ -138,4 +164,7 @@ class _ParcelAcceptedRideWidgetState extends State<ParcelAcceptedRideWidget> {
       });
     });
   }
+
+  String _getParcelTrackUrl(String? refId) =>
+      '${AppConstants.baseUrl}/track-parcel/$refId';
 }

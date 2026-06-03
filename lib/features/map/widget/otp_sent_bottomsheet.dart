@@ -3,6 +3,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:ride_sharing_user_app/common_widgets/button_widget.dart';
+import 'package:ride_sharing_user_app/util/app_constants.dart';
 import 'package:ride_sharing_user_app/common_widgets/expandable_bottom_sheet.dar.dart';
 import 'package:ride_sharing_user_app/common_widgets/swipable_button_widget/slider_button_widget.dart';
 import 'package:ride_sharing_user_app/features/dashboard/controllers/bottom_menu_controller.dart';
@@ -48,7 +49,7 @@ class _OtpSentBottomSheetState extends State<OtpSentBottomSheet> {
     });
 
     try {
-      // Get current location
+      // 1. Get current location permission and services
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         Get.snackbar(
@@ -89,48 +90,61 @@ class _OtpSentBottomSheetState extends State<OtpSentBottomSheet> {
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      // Get destination from trip details
+      // 2. Fetch Trip details from GetX controller
       final tripDetails = Get.find<RideController>().tripDetails;
-      String googleMapsUrl;
+      String googleMapsUrl = '';
 
-      if (tripDetails?.destinationCoordinates != null &&
-          tripDetails!.destinationCoordinates!.coordinates != null &&
-          tripDetails.destinationCoordinates!.coordinates!.length >= 2) {
-        // Use coordinates if available
-        // PickupCoordinates stores coordinates as [longitude, latitude] in GeoJSON format
-        final double destinationLat =
-            tripDetails.carpoolRideLocation!.longitude!; // latitude
-        final double destinationLng =
-            tripDetails.carpoolRideLocation!.latitude!; // longitude
+      double? targetLat;
+      double? targetLng;
 
+      // 3. Determine target endpoint based on Trip Type rule
+      if (tripDetails?.type == 'carpool') {
+        if (tripDetails?.closestPcikupPoint != null &&
+            tripDetails!.closestPcikupPoint!.length >= 2) {
+          // Carpool targets the closest pickup point [Lng, Lat]
+          targetLng = tripDetails.closestPcikupPoint![0];
+          targetLat = tripDetails.closestPcikupPoint![1];
+        }
+      } else {
+        if (tripDetails?.pickupCoordinates != null &&
+            tripDetails!.pickupCoordinates!.coordinates != null &&
+            tripDetails.pickupCoordinates!.coordinates!.length >= 2) {
+          // Regular trip targets standard pickup coordinates [Lng, Lat]
+          targetLng = tripDetails.pickupCoordinates!.coordinates![0];
+          targetLat = tripDetails.pickupCoordinates!.coordinates![1];
+        }
+      }
+
+      // 4. Construct proper Google Maps Universal Directions URL
+      if (targetLat != null && targetLng != null) {
+        // Formulating official maps directions structure
         googleMapsUrl =
-            'https://www.google.com/maps/dir/?api=1&origin=${currentPosition.latitude},${currentPosition.longitude}&destination=$destinationLat,$destinationLng&travelmode=driving';
-      } else if (tripDetails?.destinationAddress != null &&
-          tripDetails!.destinationAddress!.isNotEmpty) {
-        // Use address if coordinates are not available
-        final String encodedAddress = Uri.encodeComponent(
-          tripDetails.destinationAddress!,
-        );
+            'https://www.google.com/maps/dir/?api=1&origin=${currentPosition.latitude},${currentPosition.longitude}&destination=$targetLat,$targetLng&travelmode=driving';
+      } else if (tripDetails?.pickupAddress != null &&
+          tripDetails!.pickupAddress!.isNotEmpty) {
+        // Fallback to text address string if coordinates are missing
+        final String encodedAddress =
+            Uri.encodeComponent(tripDetails.pickupAddress!);
         googleMapsUrl =
             'https://www.google.com/maps/dir/?api=1&origin=${currentPosition.latitude},${currentPosition.longitude}&destination=$encodedAddress&travelmode=driving';
       } else {
         Get.snackbar(
-          'No Destination',
-          'Destination location not available',
+          'No Target Location',
+          'Target pickup location is not available',
           backgroundColor: Colors.red,
           colorText: Colors.white,
         );
         return;
       }
 
-      // Launch Google Maps
+      // 5. Launch Google Maps application externally
       final Uri uri = Uri.parse(googleMapsUrl);
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
         Get.snackbar(
           'Error',
-          'Could not open Google Maps',
+          'Could not open Google Maps app',
           backgroundColor: Colors.red,
           colorText: Colors.white,
         );
@@ -293,6 +307,24 @@ class _OtpSentBottomSheetState extends State<OtpSentBottomSheet> {
                           height: Dimensions.paddingSizeDefault,
                         ),
                       ]),
+                    if (rideController.tripDetails?.type == 'parcel')
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: Dimensions.paddingSizeDefault,
+                            vertical: Dimensions.paddingSizeExtraSmall),
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: ButtonWidget(
+                            fontSize: Dimensions.fontSizeSmall,
+                            buttonText: 'track_now'.tr,
+                            width: 80,
+                            height: 32,
+                            onPressed: () => launchUrl(Uri.parse(
+                                _getParcelTrackUrl(
+                                    rideController.tripDetails?.refId))),
+                          ),
+                        ),
+                      ),
                     RouteWidget(
                         totalDistance: rideController
                                 .tripDetails?.estimatedDistance
@@ -431,4 +463,7 @@ class _OtpSentBottomSheetState extends State<OtpSentBottomSheet> {
       });
     });
   }
+
+  String _getParcelTrackUrl(String? refId) =>
+      '${AppConstants.baseUrl}/track-parcel/$refId';
 }

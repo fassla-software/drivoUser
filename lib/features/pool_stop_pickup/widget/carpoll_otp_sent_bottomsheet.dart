@@ -42,161 +42,187 @@ class _CarPollOtpSentBottomSheetState extends State<CarPollOtpSentBottomSheet> {
   Widget build(BuildContext context) {
     return GetBuilder<CarPollRideController>(builder: (rideController) {
       return GetBuilder<LocationController>(builder: (locationController) {
-        return currentState == 0
-            ? rideController.tripDetails != null
-                ? Column(children: [
-                    TollTipWidget(
-                        title:
-                            '${(rideController.remainingDistanceModel.isNotEmpty) ? (rideController.remainingDistanceModel[0].duration) ?? '0' : '0'} ${'away'.tr}'),
-                    const SizedBox(
-                      height: Dimensions.paddingSizeDefault,
-                    ),
-                    const OtpWidget(fromPage: true),
-                    const ActivityScreenRiderDetails(),
-                    const SizedBox(height: Dimensions.paddingSizeDefault),
-                    const EstimatedFareAndDistance(),
-                    const SizedBox(height: Dimensions.paddingSizeDefault),
-                    RouteWidget(
-                        totalDistance: rideController
-                                .tripDetails?.estimatedDistance
-                                .toString() ??
-                            '',
-                        fromAddress:
-                            rideController.tripDetails?.pickupAddress ?? "",
-                        toAddress:
-                            rideController.tripDetails?.destinationAddress ??
+        return Container(
+          width: MediaQuery.of(context).size.width,
+          decoration: BoxDecoration(
+            color: Theme.of(context).canvasColor,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(Dimensions.paddingSizeDefault),
+              topRight: Radius.circular(Dimensions.paddingSizeDefault),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Theme.of(context).hintColor.withOpacity(0.15),
+                blurRadius: 10,
+                spreadRadius: 1,
+                offset: const Offset(0, -2),
+              )
+            ],
+          ),
+          padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
+          child: currentState == 0
+              ? rideController.tripDetails != null
+                  ? Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TollTipWidget(
+                            title:
+                                '${(rideController.remainingDistanceModel.isNotEmpty) ? (rideController.remainingDistanceModel[0].duration) ?? '0' : '0'} ${'away'.tr}'),
+                        const SizedBox(
+                          height: Dimensions.paddingSizeDefault,
+                        ),
+                        const OtpWidget(fromPage: true),
+                        const ActivityScreenRiderDetails(),
+                        const SizedBox(height: Dimensions.paddingSizeDefault),
+                        const EstimatedFareAndDistance(),
+                        const SizedBox(height: Dimensions.paddingSizeDefault),
+                        RouteWidget(
+                            totalDistance: rideController
+                                    .tripDetails?.estimatedDistance
+                                    .toString() ??
                                 '',
-                        extraOneAddress: widget.firstRoute,
-                        extraTwoAddress: widget.secondRoute,
-                        entrance: rideController.tripDetails?.entrance ?? ''),
-                    const SizedBox(height: Dimensions.paddingSizeDefault),
-                    rideController.isLoading
-                        ? Center(
-                            child: SpinKitCircle(
-                                color: Theme.of(context).primaryColor,
-                                size: 40.0))
-                        : Center(
-                            child: SliderButton(
-                              action: () {
-                                currentState = 1;
-                                widget.expandableKey.currentState?.expand();
-                                setState(() {});
-                              },
-                              label: Text('cancel_ride'.tr,
-                                  style: TextStyle(
-                                      color: Get.isDarkMode
-                                          ? Theme.of(context).primaryColor
-                                          : Theme.of(context).cardColor)),
-                              dismissThresholds: 0.5,
-                              dismissible: false,
-                              shimmer: false,
-                              width: 1170,
-                              height: 40,
-                              buttonSize: 40,
-                              radius: 20,
-                              icon: Center(
-                                  child: Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Theme.of(context).cardColor),
-                                child: Center(
-                                  child: Icon(
-                                    Get.find<LocalizationController>().isLtr
-                                        ? Icons.arrow_forward_ios_rounded
-                                        : Icons.keyboard_arrow_left,
-                                    color: Colors.grey,
-                                    size: 20.0,
-                                  ),
+                            fromAddress:
+                                rideController.tripDetails?.pickupAddress ?? "",
+                            toAddress:
+                                rideController.tripDetails?.destinationAddress ??
+                                    '',
+                            extraOneAddress: widget.firstRoute,
+                            extraTwoAddress: widget.secondRoute,
+                            entrance: rideController.tripDetails?.entrance ?? ''),
+                        const SizedBox(height: Dimensions.paddingSizeDefault),
+                        rideController.isLoading
+                            ? Center(
+                                child: SpinKitCircle(
+                                    color: Theme.of(context).primaryColor,
+                                    size: 40.0))
+                            : Center(
+                                child: SliderButton(
+                                  action: () {
+                                    currentState = 1;
+                                    widget.expandableKey.currentState?.expand();
+                                    setState(() {});
+                                  },
+                                  label: Text('cancel_ride'.tr,
+                                      style: TextStyle(
+                                          color: Get.isDarkMode
+                                              ? Theme.of(context).primaryColor
+                                              : Theme.of(context).cardColor)),
+                                  dismissThresholds: 0.5,
+                                  dismissible: false,
+                                  shimmer: false,
+                                  width: 1170,
+                                  height: 40,
+                                  buttonSize: 40,
+                                  radius: 20,
+                                  icon: Center(
+                                      child: Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Theme.of(context).cardColor),
+                                    child: Center(
+                                      child: Icon(
+                                        Get.find<LocalizationController>().isLtr
+                                            ? Icons.arrow_forward_ios_rounded
+                                            : Icons.keyboard_arrow_left,
+                                        color: Colors.grey,
+                                        size: 20.0,
+                                      ),
+                                    ),
+                                  )),
+                                  isLtr: Get.find<LocalizationController>().isLtr,
+                                  boxShadow: const BoxShadow(blurRadius: 0),
+                                  buttonColor: Colors.transparent,
+                                  backgroundColor: Theme.of(context).primaryColor,
+                                  baseColor: Theme.of(context).primaryColor,
                                 ),
-                              )),
-                              isLtr: Get.find<LocalizationController>().isLtr,
-                              boxShadow: const BoxShadow(blurRadius: 0),
-                              buttonColor: Colors.transparent,
-                              backgroundColor: Theme.of(context).primaryColor,
-                              baseColor: Theme.of(context).primaryColor,
-                            ),
-                          )
-                  ])
-                : const Column(children: [
-                    BannerShimmer(),
-                    BannerShimmer(),
-                    BannerShimmer()
-                  ])
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(
-                    height: Dimensions.paddingSizeSmall,
-                  ),
-                  Text(
-                    'rider_is_coming'.tr,
-                    style: textSemiBold.copyWith(
-                        color: Theme.of(context).primaryColor,
-                        fontSize: Dimensions.fontSizeSmall),
-                  ),
-                  const SizedBox(
-                    height: Dimensions.paddingSizeSmall,
-                  ),
-                  CancellationRadioButton(isOngoing: false),
-                  const SizedBox(
-                    height: Dimensions.paddingSizeLarge,
-                  ),
-                  Row(
-                    children: [
-                      Expanded(
-                          child: ButtonWidget(
-                              buttonText: 'no_continue_trip'.tr,
-                              showBorder: true,
-                              transparent: true,
-                              backgroundColor: Theme.of(context).primaryColor,
-                              borderColor: Theme.of(context).primaryColor,
-                              textColor: Theme.of(context).cardColor,
-                              radius: Dimensions.paddingSizeSmall,
-                              onPressed: () {
-                                currentState = 0;
-                                setState(() {});
-                              })),
-                      const SizedBox(
-                        width: Dimensions.paddingSizeSmall,
-                      ),
-                      Expanded(
-                          child: ButtonWidget(
-                              buttonText: 'submit'.tr,
-                              showBorder: true,
-                              transparent: true,
-                              textColor:
-                                  Get.isDarkMode ? Colors.white : Colors.black,
-                              borderColor: Theme.of(context).hintColor,
-                              radius: Dimensions.paddingSizeSmall,
-                              onPressed: () {
-                                Get.find<CarPollRideController>()
-                                    .stopLocationRecord();
-                                rideController
-                                    .tripStatusUpdate(
-                                        rideController.tripDetails!.id!,
-                                        'cancelled',
-                                        'ride_request_cancelled_successfully',
-                                        Get.find<TripController>()
-                                            .rideCancellationReasonList!
-                                            .data!
-                                            .acceptedRide![Get.find<
-                                                TripController>()
-                                            .rideCancellationCauseCurrentIndex])
-                                    .then((value) {
-                                  if (value.statusCode == 200) {
-                                    Get.find<CarpollMapController>()
-                                        .notifyMapController();
-                                    Get.find<BottomMenuController>()
-                                        .navigateToDashboard();
-                                  }
-                                });
-                              })),
-                    ],
-                  )
-                ],
-              );
+                              )
+                      ],
+                    )
+                  : const Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        BannerShimmer(),
+                        BannerShimmer(),
+                        BannerShimmer()
+                      ],
+                    )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(
+                      height: Dimensions.paddingSizeSmall,
+                    ),
+                    Text(
+                      'rider_is_coming'.tr,
+                      style: textSemiBold.copyWith(
+                          color: Theme.of(context).primaryColor,
+                          fontSize: Dimensions.fontSizeSmall),
+                    ),
+                    const SizedBox(
+                      height: Dimensions.paddingSizeSmall,
+                    ),
+                    CancellationRadioButton(isOngoing: false),
+                    const SizedBox(
+                      height: Dimensions.paddingSizeLarge,
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                            child: ButtonWidget(
+                                buttonText: 'no_continue_trip'.tr,
+                                showBorder: true,
+                                transparent: true,
+                                backgroundColor: Theme.of(context).primaryColor,
+                                borderColor: Theme.of(context).primaryColor,
+                                textColor: Theme.of(context).cardColor,
+                                radius: Dimensions.paddingSizeSmall,
+                                onPressed: () {
+                                  currentState = 0;
+                                  setState(() {});
+                                })),
+                        const SizedBox(
+                          width: Dimensions.paddingSizeSmall,
+                        ),
+                        Expanded(
+                            child: ButtonWidget(
+                                buttonText: 'submit'.tr,
+                                showBorder: true,
+                                transparent: true,
+                                textColor:
+                                    Get.isDarkMode ? Colors.white : Colors.black,
+                                borderColor: Theme.of(context).hintColor,
+                                radius: Dimensions.paddingSizeSmall,
+                                onPressed: () {
+                                  Get.find<CarPollRideController>()
+                                      .stopLocationRecord();
+                                  rideController
+                                      .tripStatusUpdate(
+                                          rideController.tripDetails!.id!,
+                                          'cancelled',
+                                          'ride_request_cancelled_successfully',
+                                          Get.find<TripController>()
+                                              .rideCancellationReasonList!
+                                              .data!
+                                              .acceptedRide![Get.find<
+                                                  TripController>()
+                                              .rideCancellationCauseCurrentIndex])
+                                      .then((value) {
+                                    if (value.statusCode == 200) {
+                                      Get.find<CarpollMapController>()
+                                          .notifyMapController();
+                                      Get.find<BottomMenuController>()
+                                          .navigateToDashboard();
+                                    }
+                                  });
+                                })),
+                      ],
+                    )
+                  ],
+                ),
+        );
       });
     });
   }

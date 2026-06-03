@@ -844,7 +844,7 @@ class LocationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isRideLocked = rideController.rideDetails != null;
+    final bool isRideLocked = false;
 
     return Container(
       padding: const EdgeInsets.all(Dimensions.paddingSizeDefault),
@@ -913,12 +913,12 @@ class LocationCard extends StatelessWidget {
                   onChanged: (value) => Get.find<LocationController>()
                       .searchLocation(context, value, type: LocationType.from),
                   onTap: () {
-                    if (isRideLocked) {
-                      showCustomSnackBar(
-                        'your_ride_is_ongoing_complete'.tr,
-                        isError: true,
-                      );
-                    }
+                    // if (isRideLocked) {
+                    //   showCustomSnackBar(
+                    //     'your_ride_is_ongoing_complete'.tr,
+                    //     isError: true,
+                    //   );
+                    // }
                   },
                   onMapTap: () =>
                       onOpenMap(LocationType.from, locationController),

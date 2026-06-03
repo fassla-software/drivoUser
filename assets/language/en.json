@@ -809,5 +809,6 @@
   "your_transfer_receipt_submitted": "Your transfer receipt was successfully submitted for admin review.",
   "go_to_home": "Go to Home",
   "join_successful": "Joined Successfully!",
-  "your_carpool_request_submitted": "Your carpool ride request has been submitted successfully!"
+  "your_carpool_request_submitted": "Your carpool ride request has been submitted successfully!",
+  "track_trip": "Track Trip"
 }

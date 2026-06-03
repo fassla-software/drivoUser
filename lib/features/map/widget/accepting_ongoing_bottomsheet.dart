@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:ride_sharing_user_app/util/app_constants.dart';
 import 'package:ride_sharing_user_app/common_widgets/button_widget.dart';
 import 'package:ride_sharing_user_app/common_widgets/expandable_bottom_sheet.dar.dart';
 import 'package:ride_sharing_user_app/common_widgets/swipable_button_widget/slider_button_widget.dart';
@@ -76,11 +78,25 @@ class _AcceptingAndOngoingBottomSheetState
                         Padding(
                           padding: const EdgeInsets.all(
                               Dimensions.paddingSizeDefault),
-                          child: Text(
-                            'trip_details'.tr,
-                            style: textBold.copyWith(
-                                fontSize: Dimensions.fontSizeDefault,
-                                color: Theme.of(context).primaryColor),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'trip_details'.tr,
+                                style: textBold.copyWith(
+                                    fontSize: Dimensions.fontSizeDefault,
+                                    color: Theme.of(context).primaryColor),
+                              ),
+                              if (rideController.tripDetails?.type == 'parcel')
+                                ButtonWidget(
+                                  fontSize: Dimensions.fontSizeSmall,
+                                  buttonText: 'track_now'.tr,
+                                  width: 80,
+                                  height: 32,
+                                  onPressed: () => launchUrl(
+                                      Uri.parse(_getParcelTrackUrl(rideController.tripDetails?.refId))),
+                                ),
+                            ],
                           ),
                         ),
                         if (rideController.tripDetails != null)
@@ -375,4 +391,7 @@ class _AcceptingAndOngoingBottomSheetState
       });
     });
   }
+
+  String _getParcelTrackUrl(String? refId) =>
+      '${AppConstants.baseUrl}/track-parcel/$refId';
 }
